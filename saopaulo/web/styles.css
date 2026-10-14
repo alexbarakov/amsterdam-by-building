@@ -1,0 +1,373 @@
+/* Amsterdam: a white architectural model under a North Sea sky. One loud colour, the city's red. */
+:root {
+  --sky: #e4e8ea;
+  --paper: #ffffff;
+  --ink: #000000;
+  --muted: #5d6266;
+  --rule: #cfd5d8;
+  --red: #ec0000;
+  --gutter: clamp(16px, 2.4vw, 32px);
+  font: 400 14px/1.5 "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--sky); color: var(--ink); overflow: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+/* Sky veils keep the masthead and the timeline legible over the model. */
+.veil { position: fixed; left: 0; right: 0; pointer-events: none; }
+.veil-top { top: 0; height: 150px; background: linear-gradient(var(--sky) 35%, rgba(228, 232, 234, 0)); }
+.veil-bottom { bottom: 0; height: 150px; background: linear-gradient(rgba(228, 232, 234, 0), var(--sky) 55%); }
+
+/* Masthead: the three crosses, then the name set large and tight. */
+.masthead { position: fixed; top: calc(env(safe-area-inset-top, 0px) + var(--gutter)); left: var(--gutter);
+  display: flex; gap: 14px; align-items: flex-start; pointer-events: none; }
+/* The three crosses stand exactly as tall as the capitals of the name. */
+/* LAYRS: the wordmark set vertically on a block of the city's accent, as tall as the name's capitals (sized in app.js). */
+h1 { position: relative; }
+.layrs { font-family: "Schibsted Grotesk", sans-serif; position: absolute; left: 0; top: 0; writing-mode: vertical-rl; transform: rotate(180deg); display: flex;
+  align-items: center; justify-content: center; background: var(--red); color: var(--paper); font-weight: 800;
+  line-height: 1; letter-spacing: .14em; padding: 0 .3em; border-radius: 2px; box-sizing: border-box; }
+.layrs { visibility: hidden; }
+.layrs.fitted { visibility: visible; }
+.baseline { display: inline-block; width: 0; height: 0; vertical-align: baseline; }
+.sibling { position: fixed; right: var(--gutter); top: calc(env(safe-area-inset-top, 0px) + var(--gutter) + 124px);
+  color: var(--muted); font-size: 12px; text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: 3px; }
+h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-spacing: -0.035em; line-height: .9; }
+.dek { margin: 8px 0 0; color: var(--muted); max-width: 26ch; font-size: 14px; line-height: 1.4; }
+
+/* Mode switch: a single bar, the active mode filled black. */
+.modes { position: fixed; top: calc(env(safe-area-inset-top, 0px) + var(--gutter)); left: 50%; transform: translateX(-50%);
+  display: flex; background: var(--paper); border-radius: 999px; padding: 3px; box-shadow: 0 1px 0 var(--rule); }
+.modes button { border: 0; background: none; padding: 7px 16px; border-radius: 999px; cursor: pointer; font-weight: 500; }
+.modes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+.tally { position: fixed; top: calc(env(safe-area-inset-top, 0px) + var(--gutter)); right: var(--gutter); text-align: right; }
+.tally-year { display: block; font-size: clamp(40px, 5vw, 64px); font-weight: 800; letter-spacing: -0.04em; line-height: .85; }
+.tally-count { color: var(--muted); }
+
+/* Context panel: legend, ramp or layer list, always on the left under the masthead. */
+.panel { position: fixed; left: var(--gutter); top: calc(env(safe-area-inset-top, 0px) + var(--gutter) + 120px);
+  width: min(340px, calc(100vw - 2 * var(--gutter))); max-height: calc(100vh - 300px); overflow-y: auto;
+  background: var(--paper); border-radius: 10px; padding: 14px 16px; }
+.panel h2 { margin: 0 0 8px; font-size: 13px; font-weight: 700; }
+.panel h2.section { margin: 14px 0 4px; color: var(--muted); font-weight: 600; }
+.panel h2.section:first-child { margin-top: 0; }
+.panel h2.section { display: flex; align-items: center; gap: 7px; scroll-margin-top: 6px; }
+.icon { width: 16px; height: 16px; flex: none; }
+.layer-title .icon { width: 20px; height: 20px; margin-right: 8px; vertical-align: -3px; }
+.jump { display: flex; gap: 4px; margin: 0 0 10px; position: sticky; top: -14px; background: var(--paper); padding: 6px 0; z-index: 1; }
+.jump button { width: 34px; height: 34px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper);
+  display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+.jump button:hover { background: var(--sky); }
+.jump .icon { width: 18px; height: 18px; }
+/* Language: two letters under the year. */
+.lang { position: fixed; right: var(--gutter); top: calc(env(safe-area-inset-top, 0px) + var(--gutter) + 92px); display: flex;
+  background: var(--paper); border-radius: 999px; padding: 2px; }
+.lang button { border: 0; background: none; padding: 3px 9px; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--muted); }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.swatches { display: flex; flex-direction: column; }
+.swatch { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: center; background: none; border: 0;
+  text-align: left; padding: 4px 0; cursor: pointer; }
+.swatch i { width: 12px; height: 12px; border-radius: 2px; }
+.swatch .n { color: var(--muted); font-size: 12px; }
+.sheet-handle { display: none; }
+.energy-scale div { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 2px 0; }
+.energy-scale i { height: 14px; border-radius: 2px; }
+.energy-scale .n { color: var(--muted); font-size: 12px; }
+.src { font-size: 12px; color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; }
+.layer-intro { margin: 6px 0 10px; line-height: 1.5; }
+.filter { width: 100%; font: inherit; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 6px; background: var(--paper); }
+.people .addr { color: var(--ink); opacity: .55; }
+.n, .tally, .card dd, .card .y { font-variant-numeric: tabular-nums; }
+.swatch[aria-pressed="false"] { opacity: .35; }
+.ramp { height: 10px; border-radius: 2px; margin: 4px 0 6px; }
+.ramp-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.note { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+
+.layers { display: flex; flex-direction: column; gap: 2px; margin: 0 -8px; }
+.layer { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; background: none; border: 0; text-align: left;
+  padding: 8px; border-radius: 6px; cursor: pointer; }
+.layer:hover { background: var(--sky); }
+.layer[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.layer b { font-weight: 700; }
+.layer .era, .layer .n { font-size: 12px; opacity: .7; }
+.layer .n { grid-row: 1 / 3; grid-column: 2; align-self: center; }
+.layer-detail { margin-top: 10px; }
+.stories { list-style: none; margin: 0 -8px; padding: 0; }
+.story { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 7px 8px; cursor: pointer; }
+.story:hover { background: var(--sky); }
+.story b { display: block; font-weight: 600; }
+.story span { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 2px; }
+.back { border: 0; background: none; padding: 0; margin: 0 0 10px; color: var(--muted); cursor: pointer; font-size: 13px; }
+.back::before { content: "‹ "; }
+.layer-title { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -0.02em; margin: 0 !important; line-height: 1.1; }
+.layer-era { margin: 2px 0 0; color: var(--muted); }
+.layer-detail p { margin: 0 0 10px; line-height: 1.55; }
+.layer-detail a { color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; font-size: 12px; }
+.caveat { color: var(--muted); font-size: 12px; }
+
+/* Building card: a white slip of paper. Follows the pointer on hover; pinned by a click, then it takes clicks.
+   Hierarchy: name and year are the heading; small sentence-case headings mark the sections below. */
+.card { position: fixed; z-index: 10; pointer-events: none; background: var(--paper); border-radius: 10px;
+  width: 330px; max-height: calc(100vh - 24px); overflow-y: auto; box-shadow: 0 8px 28px rgba(30, 40, 50, .16); font-size: 13px; }
+.card.pinned { pointer-events: auto; width: 400px; }
+.card-close { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%;
+  background: rgba(255,255,255,.92); cursor: pointer; font-size: 18px; line-height: 1; z-index: 1; }
+.card .photo { margin: 0; }
+.card .photo img { display: block; width: 100%; max-height: 210px; object-fit: cover; border-radius: 10px 10px 0 0; background: var(--sky); }
+.card .photo figcaption { font-size: 11px; color: var(--muted); padding: 5px 16px 0; }
+/* Photos through the years: today's first, then the archive; the year sits on the picture, tabs below jump. */
+.card .photo .frame { position: relative; }
+.card .photo .year { position: absolute; left: 10px; bottom: 8px; background: var(--ink); color: var(--paper);
+  font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.card .photo .prev, .card .photo .next { position: absolute; top: 50%; transform: translateY(-50%); width: 30px; height: 30px;
+  border: 0; border-radius: 50%; background: rgba(255,255,255,.92); cursor: pointer; font-size: 20px; line-height: 1; }
+.card .photo .prev { left: 8px; } .card .photo .next { right: 8px; }
+.card .photo .years { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 16px 0; }
+.card .photo .years button { border: 1px solid #d6d9dc; background: none; border-radius: 4px; padding: 2px 7px; font: inherit;
+  font-size: 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.card .photo .years button[aria-current] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.card .photo button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.card .more-photos { font-size: 11px; margin: 3px 16px 0; color: var(--ink); }
+.card a { color: inherit; text-decoration-color: var(--red); text-underline-offset: 3px; }
+.card-head { padding: 12px 16px 10px; }
+.card-head h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; padding-right: 26px; }
+.card .when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.card .y { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.card .period { color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.card .period i, .card .chips i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.card section { padding: 10px 16px; border-top: 1px solid var(--rule); }
+.card h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.card .extract { margin: 0; line-height: 1.55; }
+.card .fact { background: #fff6e8; border-top-color: #f0dcc0; }
+.card .fact p { margin: 0; line-height: 1.5; }
+.card .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.card .chips li { display: flex; gap: 8px; align-items: flex-start; }
+.card .chips li i { margin-top: 5px; }
+.card .chips b { font-weight: 600; }
+.card .chips span { color: var(--muted); }
+.card .chips p { margin: 3px 0 0; line-height: 1.5; }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; text-align: right; }
+.card .why { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.card .sources p { margin: 0; }
+.card .elabel { color: #fff; font-weight: 700; padding: 1px 7px; border-radius: 3px; }
+.card .residents { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.card .residents span, .card .residents .desc { color: var(--muted); }
+.card .residents blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 2px solid var(--rule); font-size: 12px; line-height: 1.5; color: #3e4448; }
+.card .photo.inline { margin: 0 -16px -10px; }
+.card .photo.inline img { border-radius: 0; }
+.card .hint { margin: 0; padding: 8px 16px 12px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--rule); }
+
+/* How to move: a quiet line under the timeline's right end. */
+.howto { position: fixed; right: var(--gutter); bottom: calc(env(safe-area-inset-bottom, 0px) + 120px); color: var(--muted); background: rgba(228,232,234,.85); padding: 2px 8px; border-radius: 4px;
+  font-size: 12px; pointer-events: none; }
+@media (max-width: 720px), (hover: none) { .howto { display: none; } }
+
+.timeline { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; gap: 14px;
+  padding: 0 var(--gutter) calc(env(safe-area-inset-bottom, 0px) + 14px); pointer-events: none; }
+.timeline > * { pointer-events: auto; }
+.timeline canvas { flex: 1; height: 96px; cursor: ew-resize; touch-action: none; }
+.play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ink); color: var(--paper);
+  cursor: pointer; margin-bottom: 24px; display: grid; place-items: center; flex: none; }
+.play svg { width: 16px; height: 16px; fill: currentColor; }
+
+.loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--muted); }
+
+@media (max-width: 720px) {
+  .dek { display: none; }
+  h1 { font-size: 30px; }
+  .tally-year { font-size: 30px; }
+  .tally-count { font-size: 12px; }
+  .masthead, .tally { top: calc(env(safe-area-inset-top, 0px) + 14px); }
+  .lang { top: calc(env(safe-area-inset-top, 0px) + 66px); }
+  .sibling { top: calc(env(safe-area-inset-top, 0px) + 98px); }
+  /* Modes: one scrolling strip above the timeline. */
+  .modes { top: auto; left: 12px; right: 12px; transform: none; bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
+    overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
+  .modes::-webkit-scrollbar { display: none; }
+  .modes button { flex: 1 0 auto; padding: 8px 11px; }
+  /* Panel: a sheet above the modes, folded to its handle by default. */
+  .panel { top: auto; left: 12px; right: 12px; width: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 156px);
+    max-height: 48vh; padding: 0 14px 12px; }
+  .sheet-handle { display: block; width: calc(100% + 28px); margin: 0 -14px 8px; padding: 12px 14px; border: 0;
+    background: none; text-align: left; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--rule); }
+  .sheet-handle::after { content: ""; float: right; width: 8px; height: 8px; margin-top: 4px; border: solid var(--muted);
+    border-width: 0 2px 2px 0; transform: rotate(225deg); }
+  .panel.collapsed { overflow: hidden; padding-bottom: 0; }
+  .panel.collapsed .sheet-handle { margin-bottom: 0; border-bottom: 0; }
+  .panel.collapsed .sheet-handle::after { transform: rotate(45deg); margin-top: 0; }
+  .panel.collapsed #panel-body { display: none; }
+  /* Card: a sheet from the bottom edge. */
+  .card, .card.pinned { left: 0 !important; right: 0; top: auto !important; bottom: 0; width: auto; max-height: 72vh;
+    border-radius: 14px 14px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .card .photo img { border-radius: 14px 14px 0 0; max-height: 190px; }
+  .timeline { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  .timeline canvas { height: 76px; }
+  .play { width: 40px; height: 40px; margin-bottom: 18px; }
+}
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* About: a reading page over the map. */
+.lang .about-open { color: var(--ink); }
+.about { border: 0; border-radius: 12px; padding: 0; width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
+  box-shadow: 0 20px 60px rgba(30, 40, 50, .25); color: var(--ink); overflow-y: auto; }
+.about::backdrop { background: rgba(228, 232, 234, .7); }
+/* The dialog scrolls, not the article: an article that scrolls would shrink beside the floating close button. */
+.about article { padding: 28px 32px 32px; }
+.about h2 { margin: 0 0 12px; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.about h3 { margin: 22px 0 6px; font-size: 15px; font-weight: 700; }
+.about p, .about li { line-height: 1.6; max-width: 64ch; }
+.about ul { padding-left: 18px; margin: 6px 0 0; }
+.about li { margin-bottom: 6px; }
+.about a { color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; }
+.about .credit { color: var(--muted); }
+.about .author { font-weight: 600; margin-bottom: 4px; }
+.about .author + .credit { margin-top: 0; }
+.about .notice { border-left: 3px solid var(--red); padding-left: 12px; font-weight: 500; }
+.about-close { position: sticky; float: right; top: 10px; margin: 10px 10px 0 0; width: 32px; height: 32px; border: 0;
+  border-radius: 50%; background: var(--sky); cursor: pointer; font-size: 18px; }
+@media (max-width: 720px) { .about article { padding: 20px 18px 24px; } }
+.contribute { margin: 14px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 12px; }
+.contribute a { color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; }
+.card .photo button[disabled] { opacity: .35; cursor: default; }
+.card .photo .gone { position: absolute; inset: 0; margin: 0; display: grid; place-content: center; text-align: center; gap: 4px;
+  padding: 0 40px; background: var(--sky); font-size: 12px; border-radius: 10px 10px 0 0; }
+.card .photo.failed img { visibility: hidden; height: 190px; }
+
+/* Quests. The playful part of the page, in the city's own sign: every answer is worth three red crosses, the
+   X X X of the arms of Amsterdam. Black and white otherwise, like the rest of the map. */
+.modes .quests-open { display: inline-flex; align-items: center; gap: 7px; margin-left: 2px; border-left: 1px solid var(--rule); border-radius: 0 999px 999px 0; }
+.modes .quests-open svg { width: 18px; height: 6px; stroke: var(--red); stroke-width: 2; stroke-linecap: round; fill: none; }
+.modes .quests-open:hover { background: #f1f3f4; }
+.q-x { display: inline-flex; gap: 1px; font-weight: 800; font-size: 15px; line-height: 1; letter-spacing: -0.02em; }
+.q-x i { font-style: normal; color: #d8dcde; }
+.q-x i.on { color: var(--red); }
+.q-level { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.q-level .q-x { font-size: 13px; }
+
+.quests { width: min(980px, calc(100vw - 32px)); }
+.quests article { padding: 24px 28px 26px; }
+.quests h2 { margin: 0; }
+.quests .q-lede { max-width: 70ch; margin: 6px 0 0; font-size: 13px; line-height: 1.5; }
+.quests .q-score { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.quests .q-score b { color: var(--red); font-size: 18px; }
+.quests .q-grid { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.quests .q-tile { margin: 0; max-width: none; line-height: 1.35; }
+.q-tile { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; border-radius: 10px;
+  background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule); }
+.q-tile.l3 { box-shadow: inset 0 0 0 2px var(--ink); }
+.q-tile h3 { margin: 2px 0 0; font-size: 15px; line-height: 1.25; letter-spacing: -0.01em; }
+.q-tile p { margin: 0; color: #4b5257; font-size: 12px; line-height: 1.4; flex: 1; }
+.q-tile footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 6px; }
+.q-tile .q-progress { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q-tile.complete::after { content: "×"; position: absolute; top: 6px; right: 12px; color: var(--red); font-weight: 800; font-size: 20px; }
+.quests .q-start { border: 0; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 5px 12px; cursor: pointer; font-weight: 600; font-size: 12px; }
+.q-tile.complete .q-start { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+/* The open quest: a slip at the right, above the timeline. */
+.quest { position: fixed; z-index: 11; right: var(--gutter); bottom: 132px; width: 350px; max-height: calc(100vh - 230px); overflow-y: auto;
+  background: var(--paper); border-radius: 12px; box-shadow: 0 10px 34px rgba(30, 40, 50, .2); font-size: 13px; }
+.quest header { cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 44px 11px 16px; background: var(--ink); color: var(--paper);
+  border-radius: 12px 12px 0 0; position: sticky; top: 0; z-index: 1; }
+.quest header b { font-size: 14px; }
+.quest header .q-level { margin-left: auto; color: #b9c0c4; }
+.quest header .q-x i:not(.on) { color: #4a4f53; }
+.quest .q-close { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border: 0; border-radius: 50%; z-index: 2;
+  background: none; color: var(--paper); cursor: pointer; font-size: 20px; line-height: 1; }
+.quest .q-steps { display: flex; align-items: center; gap: 4px; padding: 10px 16px 0; }
+.quest .q-steps i { width: 18px; height: 4px; border-radius: 2px; background: #dfe3e5; }
+.quest .q-steps i.done { background: var(--red); }
+.quest .q-steps i.now { background: var(--ink); }
+.quest .q-steps span { margin-left: auto; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.quest .q-photo { position: relative; margin: 10px 16px 0; overflow: hidden; height: 170px; border-radius: 8px; background: var(--sky); }
+.quest .q-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.quest .q-photo .year { position: absolute; left: 8px; bottom: 8px; background: var(--ink); color: var(--paper); font-weight: 700; font-size: 12px; padding: 2px 7px; border-radius: 4px; }
+.quest .q-credit { font-size: 11px; color: var(--muted); padding: 4px 16px 0; margin: 0; }
+.quest .q-credit a, .quest .q-found a { color: inherit; text-decoration-color: var(--red); text-underline-offset: 3px; }
+.quest .q-riddle { margin: 0; padding: 10px 16px 0; font-size: 15px; line-height: 1.5; }
+.quest .q-hints { margin: 8px 16px 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.quest .q-hints li { font-size: 13px; line-height: 1.45; padding-left: 10px; border-left: 2px solid var(--red); }
+.quest .q-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 16px 14px; }
+.quest .q-actions button, .quest .q-options button { border: 1px solid var(--rule); background: var(--paper); border-radius: 999px;
+  padding: 6px 13px; cursor: pointer; font-weight: 600; font-size: 12px; }
+.quest .q-actions button small { color: var(--red); font-weight: 800; }
+.quest .q-actions .primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.quest .q-worth { margin-left: auto; }
+.quest .q-feedback { margin: 0; padding: 8px 16px 0; font-size: 13px; color: var(--muted); min-height: 1.4em; }
+.quest .q-actions .q-feedback { padding: 0; }
+.quest .q-feedback.hot { color: var(--red); font-weight: 600; }
+.quest .q-feedback.warm { color: #b45309; }
+.quest .q-feedback.cold { color: #3f6b8f; }
+.quest .q-feedback.miss { animation: q-shake .35s; }
+/* year */
+.quest .q-year { padding: 10px 16px 0; }
+.quest .q-year output { display: block; font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.quest .q-year input { width: 100%; margin: 10px 0 2px; accent-color: var(--red); }
+.quest .q-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.quest .q-yeardiff { margin: 0 0 6px; }
+/* choice */
+.quest .q-options { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 0; }
+.quest .q-options button { text-align: left; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 500; }
+.quest .q-options button:hover:not(:disabled) { border-color: var(--ink); }
+.quest .q-options button.wrong { text-decoration: line-through; color: var(--muted); }
+.quest .q-options button.right { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+/* the answer */
+.quest .q-found { position: relative; margin: 14px 16px 0; padding: 14px 12px 10px; background: #f3f4f5; border-radius: 8px; }
+.quest .q-found p { margin: 0; font-size: 13px; line-height: 1.5; }
+.quest .q-found .q-earned { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.quest .q-found .q-earned:empty { display: none; }
+.q-stamp { position: absolute; top: -12px; right: 10px; padding: 2px 9px; background: var(--paper); border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .12); animation: q-stamp .45s cubic-bezier(.2, 1.6, .4, 1);
+  font-weight: 800; font-size: 18px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.q-stamp.full { color: var(--red); }
+/* Hints and "Show me" are there when needed and quiet otherwise: small grey text, not buttons. */
+.quest .q-quiet { margin-left: auto; display: flex; gap: 12px; }
+.quest .q-actions .q-quiet button { border: 0; background: none; padding: 2px 0; border-radius: 0; font-weight: 500; font-size: 12px;
+  color: var(--muted); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+.quest .q-actions .q-quiet button:hover { color: var(--ink); text-decoration-color: currentColor; }
+.quest .q-rival { margin: 8px 16px 0; font-size: 13px; color: var(--muted); }
+.quest .q-rival b { color: var(--ink); }
+.quest .q-vs { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+.quest .q-bars { display: flex; align-items: flex-end; gap: 4px; height: 44px; margin-top: 12px; }
+.quest .q-bars i { flex: 1; background: var(--ink); border-radius: 2px 2px 0 0; }
+.quest .q-bars i.full { background: var(--red); }
+.quest .q-shared { margin: 0 16px 14px; font-size: 12px; user-select: all; word-break: break-all; }
+.quest .q-then { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.quest .q-then figure { margin: 0; position: relative; }
+.quest .q-then img { width: 100%; height: 96px; object-fit: cover; border-radius: 6px; display: block; }
+.quest .q-then figcaption { position: absolute; left: 5px; bottom: 5px; background: var(--ink); color: var(--paper); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+/* the result */
+.quest .q-result { padding: 18px 16px 4px; }
+.quest .q-total { margin: 0; font-size: 15px; color: var(--muted); }
+.quest .q-total b { font-size: 48px; font-weight: 800; letter-spacing: -0.04em; color: var(--ink); }
+.quest .q-verdict { margin: 2px 0 0; font-size: 16px; font-weight: 700; }
+@keyframes q-stamp { from { transform: rotate(-20deg) scale(2); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes q-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.quest.folded > :not(header):not(.q-close):not(.q-steps) { display: none; }
+.quest.folded .q-steps { padding-bottom: 10px; }
+@media (max-width: 720px) {
+  .quest { left: 12px; right: 12px; width: auto; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 102px); max-height: 50vh; }
+  .quest .q-photo { height: 120px; }
+  /* On a phone the quests are a list: level and title on the left, progress and the button on the right. */
+  .quests .q-grid { grid-template-columns: 1fr; gap: 6px; }
+  .quests article { padding: 20px 16px; }
+  .quests .q-lede { font-size: 12px; }
+  .q-tile { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 2px; align-items: center; padding: 10px 12px; }
+  .q-tile .q-level { grid-column: 1; grid-row: 1; }
+  .q-tile h3 { grid-column: 1; grid-row: 2; margin: 0; }
+  .q-tile p { display: none; }
+  .q-tile footer { grid-column: 2; grid-row: 1 / span 2; margin: 0; gap: 10px; }
+  .q-tile.complete::after { display: none; }
+  /* During a quest the phone shows the map and the riddle only; colour hints switch modes from the riddle itself. */
+  body.questing .panel, body.questing .modes, body.questing .timeline, body.questing .lang, body.questing .tally { display: none; }
+  body.questing .quest { top: calc(env(safe-area-inset-top, 0px) + 62px); max-height: 56vh; }
+  /* Quests leave the strip, so the four colourings fit without scrolling: a pill opposite the language switch. */
+  .modes .quests-open { position: fixed; left: 12px; top: calc(env(safe-area-inset-top, 0px) + 66px); flex: none; margin: 0;
+    padding: 4px 11px; border: 0; border-radius: 999px; background: var(--paper); font-size: 12px; font-weight: 600; }
+}
+@media (prefers-reduced-motion: reduce) { .quest .q-feedback.miss, .q-stamp { animation: none; } }
