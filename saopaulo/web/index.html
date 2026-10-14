@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LAYRS: São Paulo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="logo.js" defer></script>
+</head>
+<body>
+<canvas id="scene" aria-label="Mapa 3D dos edifícios de São Paulo"></canvas>
+<div class="veil veil-top" aria-hidden="true"></div>
+<div class="veil veil-bottom" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div>
+    <h1><span class="layrs" aria-label="LAYRS">LAYRS</span>São Paulo<i class="baseline"></i></h1>
+    <p class="dek">Every building of the centro expandido, by the year it was built.</p>
+  </div>
+</header>
+
+<nav class="modes" aria-label="Colour the city by">
+  <button data-mode="0" aria-pressed="true">Period</button>
+  <button data-mode="1" aria-pressed="false">Floors</button>
+</nav>
+
+<div class="lang" role="group" aria-label="Language">
+  <button class="about-open" aria-haspopup="dialog">About</button>
+  <button data-lang="en" aria-pressed="false">EN</button><button data-lang="pt" aria-pressed="true">PT</button>
+</div>
+
+<dialog id="about" class="about" aria-labelledby="about-title">
+  <button class="about-close" aria-label="Close">×</button>
+  <article lang="en" data-lang-block="en">
+    <h2 id="about-title">About this map</h2>
+    <p>The buildings of São Paulo's centro expandido, roughly the city inside the Tietê and Pinheiros rivers, coloured
+    by the year they were built.</p>
+    <p class="credit">Built on <a href="https://github.com/alexbarakov/amsterdam-by-building" target="_blank" rel="noopener">Amsterdam, building by building</a>
+    by Alex Barakov, itself inspired by Sasha Bogachev's <a href="https://paris.bogachev.fr" target="_blank" rel="noopener">Paris, building by building</a>.</p>
+    <h3>Data</h3>
+    <ul>
+      <li>Building outlines and heights: GeoSampa, Prefeitura de São Paulo (Edificação, 2016 survey).</li>
+      <li>Years, floors, addresses, use: the IPTU property register for 2026, GeoSampa.</li>
+      <li>Fiscal lots, districts, water, streets: GeoSampa.</li>
+    </ul>
+    <h3>Method</h3>
+    <p>Each outline takes the year of the fiscal lot it stands on: the median construction year of the lot's units in
+    the IPTU register. The register dates older buildings in five-year steps (1919, 1924 … 1959); the map spreads
+    them over those five years. It also gives 1970 about eight times as often as the years around it. Both are paler
+    on the map and marked “c.”. Buildings on a lot with no dated unit take the median year of their nearest dated
+    neighbours. Outlines date from 2016, so newer buildings are missing.</p>
+  </article>
+  <article lang="pt" data-lang-block="pt" hidden>
+    <h2>Sobre este mapa</h2>
+    <p>Os edifícios do centro expandido de São Paulo, mais ou menos a cidade dentro dos rios Tietê e Pinheiros,
+    coloridos pelo ano em que foram construídos.</p>
+    <p class="credit">Feito a partir de <a href="https://github.com/alexbarakov/amsterdam-by-building" target="_blank" rel="noopener">Amsterdam, building by building</a>,
+    de Alex Barakov, inspirado por <a href="https://paris.bogachev.fr" target="_blank" rel="noopener">Paris, building by building</a>, de Sasha Bogachev.</p>
+    <h3>Dados</h3>
+    <ul>
+      <li>Contornos e alturas dos edifícios: GeoSampa, Prefeitura de São Paulo (Edificação, levantamento de 2016).</li>
+      <li>Anos, pavimentos, endereços, uso: cadastro do IPTU de 2026, GeoSampa.</li>
+      <li>Lotes fiscais, distritos, água, ruas: GeoSampa.</li>
+    </ul>
+    <h3>Método</h3>
+    <p>Cada contorno recebe o ano do lote fiscal onde está: a mediana do ano de construção das unidades do lote no
+    cadastro do IPTU. O cadastro data os edifícios mais antigos em degraus de cinco anos (1919, 1924 … 1959); o mapa
+    os distribui por esses cinco anos. Ele também traz 1970 cerca de oito vezes mais que os anos vizinhos. Ambos
+    aparecem mais claros no mapa e marcados com “c.”. Edifícios em lotes sem unidade datada recebem a mediana dos
+    vizinhos datados mais próximos. Os contornos são de 2016; edifícios mais novos não aparecem.</p>
+  </article>
+</dialog>
+
+<div class="tally" aria-live="polite">
+  <span id="year" class="tally-year">&nbsp;</span>
+  <span class="tally-count"><span id="count">0</span> buildings</span>
+</div>
+
+<aside id="panel" class="panel">
+  <button class="sheet-handle" aria-expanded="true" aria-controls="panel-body">Show legend</button>
+  <div id="panel-body"></div>
+</aside>
+
+<div id="card" class="card" hidden></div>
+<p class="howto">Drag to turn. Right-drag or Shift-drag to move. Scroll to zoom.</p>
+
+<footer class="timeline">
+  <button id="play" class="play" aria-label="Play the city's growth">
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path id="play-icon" d="M4 2.5v11l9-5.5z"/></svg>
+  </button>
+  <canvas id="hist" aria-label="Buildings per year; drag to set the year"></canvas>
+</footer>
+
+<div id="loading" class="loading">Building the city <span id="progress">0</span>%</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
