@@ -88,8 +88,10 @@ function init(G) {
   const home = () => {
     const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-    const top = 70, bottom = innerWidth > 720 ? 20 : innerHeight * .46, left = panelW() + 20, right = 140;
-    const k = Math.max(.7, Math.min(1.2, (W() - left - right) / (x1 - x0 + 1), (H() - top - bottom) / (y1 - y0 + 1)));
+    // a phone gets the whole graph on screen, smaller; a wide screen keeps it readable and leaves room for labels
+    const wide = innerWidth > 720;
+    const top = 70, bottom = wide ? 20 : innerHeight * .46, left = panelW() + 20, right = wide ? 140 : 70;
+    const k = Math.max(wide ? .7 : .3, Math.min(1.2, (W() - left - right) / (x1 - x0 + 1), (H() - top - bottom) / (y1 - y0 + 1)));
     homeK = k;
     return d3.zoomIdentity.translate(left + (W() - left - right - k * (x1 + x0)) / 2 + k * 0, top + (H() - top - bottom - k * (y1 + y0)) / 2).scale(k);
   };
@@ -142,7 +144,8 @@ function init(G) {
       if (!shownNow) continue;
       const bb = el.getBBox();
       const box = [n.x + bb.x - 2, n.y + bb.y - 1, n.x + bb.x + bb.width + 2, n.y + bb.y + bb.height + 1, n.id];
-      if (tier(n) > 1 && boxes.some(b => b[4] !== n.id && hit(box, b))) el.classList.add('clash');  // hubs always keep theirs
+      // every label, a hub's too, gives way to a more important label and to any hub's dot but its own
+      if (boxes.some(b => b[4] !== n.id && hit(box, b))) el.classList.add('clash');
       else boxes.push(box);
     }
   }

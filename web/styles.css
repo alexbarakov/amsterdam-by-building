@@ -572,3 +572,14 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
   .panel:not(.collapsed) .sheet-handle::after { content: "×"; width: auto; height: auto; border: 0; transform: none; margin: -4px 0 0;
     font-size: 22px; line-height: 1; font-weight: 400; color: var(--muted); }
 }
+
+/* Phone: the search and the folded legend sit in one row under the name, as tall as the About group;
+   the open legend drops down below that row. */
+@media (max-width: 720px) {
+  .find { top: calc(env(safe-area-inset-top, 0px) + 66px); width: 28px; }
+  .find input { height: 28px; padding-left: 28px; background-position: 8px 50%; background-size: 12px; font-size: 12px; }
+  .panel.collapsed { top: calc(env(safe-area-inset-top, 0px) + 66px); bottom: auto; left: 48px; }
+  .panel.collapsed .sheet-handle { height: 28px; padding: 0 10px 0 28px; font-size: 12px; line-height: 28px; }
+  .panel.collapsed .sheet-handle::before { left: 10px; width: 10px; height: 8px; border-width: 1.5px; background-size: 100% 1.5px; }
+  .panel:not(.collapsed) { top: calc(env(safe-area-inset-top, 0px) + 102px); bottom: auto; max-height: 62dvh; }
+}
