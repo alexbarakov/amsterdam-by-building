@@ -135,12 +135,10 @@ def gables():
           "and stacked loading doors line the Brouwersgracht, the western islands and the Entrepotdok. "
           "The East and West India Companies ran their trade from a handful of buildings that still stand."),
     source=("Rijksmonumentenregister, RCE", "https://monumentenregister.cultureelerfgoed.nl"),
-    groups=[("pakhuis", "Warehouse"), ("company", "VOC and WIC buildings")],
+    groups=[("pakhuis", "Warehouse")],
 )
 def trade():
     keyed = {nr: "pakhuis" for nr, t in rce_texts().items() if re.search(r"\bpakhuis|pakhuizen", t.lower()[:200])}
-    # Oost-Indisch Huis, West-Indisch Huis, 's Lands Zeemagazijn, the VOC ropewalk
-    keyed.update({nr: "company" for nr in ("2012", "1372", "2205", "3959")})
     return by_monument(keyed)
 
 
@@ -294,9 +292,9 @@ def housing():
 
 PLANNED = [
     ("Plan Zuid", "Plan Zuid"), ("Admiralenbuurt", "Admiralenbuurt"), ("Betondorp", "Betondorp"),
-    ("Van Eesteren Museum", "Western garden cities"), ("IJplein", "IJplein"),
-    ("Bijlmermuseum", "Bijlmermeer"), ("Plan Van Gool", "Plan Van Gool"),
+    ("Van Eesteren Museum", "Western garden cities"), ("later", "Bijlmermeer, IJplein, Plan Van Gool"),
 ]
+LATER_PLANS = {"IJplein", "Bijlmermuseum", "Plan Van Gool"}  # small: one colour, so the layers fit in 64 bits
 
 
 @layer(
@@ -310,6 +308,7 @@ PLANNED = [
 def planned():
     rows = json.load(open(f"{RAW}/stadsgezichten.json"))
     g = gpd.GeoDataFrame({"naam": [r["naam"] for r in rows]}, geometry=[rd(r["geometry"]) for r in rows], crs=28992)
+    g["naam"] = g.naam.map(lambda n: "later" if n in LATER_PLANS else n)
     return within(g[g.naam.isin([n for n, _ in PLANNED])], "naam")
 
 
@@ -356,7 +355,7 @@ TECHNIQUE = {"Reliëf": "relief", "Schildering": "mural", "Mozaïek": "mosaic", 
           "murals and glass were built into schools, offices and housing blocks; the city has surveyed them and "
           "ranked the best."),
     source=("Gemeente Amsterdam, wall art survey", "https://maps.amsterdam.nl/wandkunst/"),
-    groups=[("top", "Of top value"), ("valuable", "Valuable")],
+    groups=[("wallart", "Wall art")],
 )
 def wallart():
     g = gpd.read_file(f"{RAW}/wandkunst.geojson").to_crs(28992)
@@ -371,8 +370,9 @@ def wallart():
         tech = TECHNIQUE.get(r.Techniek, (r.Techniek or "work").lower())
         year = f", {r.Jaartal}" if r.Jaartal else ""
         tech_nl = (r.Techniek or "kunstwerk").lower()
-        out[bag] = (r.k, {"story": f"“{r.Titel_kunstwerk}”, a {tech} by {r.Kunstenaar}{year}.",
-                          "story_nl": f"“{r.Titel_kunstwerk}”, {tech_nl} van {r.Kunstenaar}{year}."})
+        top, top_nl = (" Ranked of top value.", " Gewaardeerd als topstuk.") if r.k == "top" else ("", "")
+        out[bag] = ("wallart", {"story": f"“{r.Titel_kunstwerk}”, a {tech} by {r.Kunstenaar}{year}.{top}",
+                                "story_nl": f"“{r.Titel_kunstwerk}”, {tech_nl} van {r.Kunstenaar}{year}.{top_nl}"})
     return out
 
 
@@ -410,7 +410,7 @@ def arcam():
           "its article or its map entry."),
     caveat="Murals and graffiti with a Wikidata item or an OpenStreetMap entry, placed on the nearest building.",
     source=("Wikidata, Wikipedia and OpenStreetMap", "https://nl.wikipedia.org/wiki/Muurschildering"),
-    groups=[("mural", "Mural"), ("graffiti", "Graffiti and street art")],
+    groups=[("mural", "Murals and street art")],
 )
 def streetart():
     b = buildings()
@@ -447,7 +447,7 @@ def streetart():
         by_nl = f" van {w['artist']}" if w["artist"] else ""
         year = f", {w['year']}" if w["year"] else ""
         what, what_nl = ("a mural", "muurschildering") if w["kind"] == "mural" else ("street art", "straatkunst")
-        out.setdefault(bag, (w["kind"], {"name": w["name"], "name_nl": w["name"], "source": w["url"],
+        out.setdefault(bag, ("mural", {"name": w["name"], "name_nl": w["name"], "source": w["url"],
                                           "story": f"“{w['name']}”, {what}{by}{year}.",
                                           "story_nl": f"“{w['name']}”, {what_nl}{by_nl}{year}."}))
     return out
@@ -486,7 +486,7 @@ def _curated_layer(L):
                         out.setdefault(p, [("community", {"story": f"{m['name']}."})])
         return out
 
-    section = {"jewish": "Faith and community", "secrets": "Discover"}.get(L["id"], "Trade and empire")
+    section = L.get("section") or {"jewish": "Faith and community", "secrets": "Discover"}.get(L["id"], "Trade and empire")
     LAYERS.append(dict(id=L["id"], section=section, title=L["title"], era=L["era"], text=L["intro"],
                        caveat=L.get("caveat"), source=("Wikipedia, per building", "https://www.wikipedia.org"),
                        groups=[tuple(g) for g in groups], source_fn=fn))

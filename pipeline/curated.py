@@ -134,7 +134,7 @@ CURATED.append(dict(
            "occupation about three in four of them were deported and murdered."),
     caveat=("The homes of the victims are not shown: the dataset linking the Joods Monument to buildings has no "
             "open licence. joodsmonument.nl lists every person and address."),
-    groups=[("community", "Community and worship"), ("work", "Work and the diamond trade"),
+    groups=[("community", "Community, worship and work"),
             ("persecution", "Persecution 1940–1945"), ("hiding", "Hiding and rescue"), ("lives", "Lives remembered")],
     entries=[
         ("Portuguese Synagogue", "Mr. Visserplein 3",
@@ -157,10 +157,10 @@ CURATED.append(dict(
          "nl:Huis De Pinto", ("Sint Antoniesbreestraat", "1651"), "community"),
         ("Burcht van Berlage", "Henri Polaklaan 9",
          "Headquarters of the diamond workers' union ANDB, led by Henri Polak, built by Berlage in 1900.",
-         "nl:De Burcht (Amsterdam)", ("Henri Polak", "ANDB"), "work"),
+         "nl:De Burcht (Amsterdam)", ("Henri Polak", "ANDB"), "community"),
         ("Asscher Diamond Factory", "Tolstraat 127",
          "The Asscher family's diamond works of 1907, where the Cullinan, the largest diamond ever found, was cut.",
-         "nl:Diamantbuurt (Amsterdam)", ("Asscher", "Cullinan"), "work"),
+         "nl:Diamantbuurt (Amsterdam)", ("Asscher", "Cullinan"), "community"),
         ("Hollandsche Schouwburg", "Plantage Middenlaan 24",
          "A theatre the occupier turned into the assembly point for Jews awaiting deportation, 1942–1943.",
          "en:Hollandsche Schouwburg", ("1942", "deport"), "persecution"),
@@ -229,3 +229,9 @@ CURATED.append(dict(
          "Its building dates from 1629, and the café is said to be the oldest bar in Amsterdam.",
          "nl:Martelaarsgracht", ("1629", "oudste kroeg"), "secrets"),
     ]))
+
+
+# Twelve more layers (merchants, painters, port, science, resistance, counterculture, queer Amsterdam, stage, royal
+# Amsterdam, the 19th-century city, churches, writers), each entry checked the same way.
+from .curated_more import CURATED_MORE  # noqa: E402
+CURATED += CURATED_MORE

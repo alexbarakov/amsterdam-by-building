@@ -312,3 +312,18 @@ NL = {
     "Wikidata, Wikipedia and OpenStreetMap": "Wikidata, Wikipedia en OpenStreetMap",
     "Mural": "Muurschildering", "Graffiti and street art": "Graffiti en straatkunst",
 }
+
+
+# The twelve layers of curated_more.py, translated with them.
+import json as _json
+from pathlib import Path as _Path
+NL.update(_json.loads((_Path(__file__).parent / "curated_more_nl.json").read_text()))
+NL.update({
+    "Wall art": "Wandkunst", "Murals and street art": "Muurschilderingen en straatkunst",
+    "Community, worship and work": "Gemeenschap, geloof en werk",
+    "Bijlmermeer, IJplein, Plan Van Gool": "Bijlmermeer, IJplein, Plan Van Gool",
+    "Art and craft": "Kunst en ambacht", "Science and learning": "Wetenschap en onderwijs",
+})
+# Building names in those layers are Dutch already: they stay as they are.
+from .curated_more import CURATED_MORE as _MORE  # noqa: E402
+NL.update({e[0]: e[0] for L in _MORE for e in L["entries"] if e[0] not in NL})

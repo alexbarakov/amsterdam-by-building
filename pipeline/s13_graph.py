@@ -12,9 +12,22 @@ import geopandas as gpd
 import pandas as pd
 
 from .s03_tiles import DAM as ORIGIN
-from .ontology import ENTITIES, PERSON
+from .ontology import ENTITIES, ORG, PERSON
 
-RESIDENT_MIN_LINKS = 15
+RESIDENT_MIN_LINKS = 8
+ARCHITECT_MIN_BUILDINGS = 3  # architects of at least this many buildings with their own Wikidata item
+
+
+def same_person(name):
+    """The ontology's person whose first and last name both appear in `name` (Eduard Cuypers is not Pierre)."""
+    words = set(re.findall(r"[\w-]+", name.lower()))
+    for e in ENTITIES:
+        parts = re.findall(r"[\w-]+", e[2].lower())
+        if e[1] != PERSON:
+            continue
+        if (len(parts) > 1 and parts[0] in words and parts[-1] in words) or (len(parts) == 1 and name.lower() == parts[0]):
+            return e
+    return None
 
 
 def main():
@@ -62,15 +75,45 @@ def main():
             print("no building for", eid)
     have = {n["id"] for n in nodes}
 
+    # Architects (Wikidata P84 on the building's own item): those of several well-known buildings, and any who is
+    # already an entity (De Keyser, Berlage, De Klerk). The link's evidence is the building's own article or item.
+    wiki_all = json.load(open("web/data/wiki.json"))
+    wk_all = pd.read_parquet("data/wiki_index.parquet")
+    designed = {}
+    for bag, k in zip(wk_all.bag, wk_all.wk):
+        for a in wiki_all[k].get("architects") or []:
+            designed.setdefault(a, {}).setdefault(k, []).append(bag)
+    have = {n["id"] for n in nodes}
+    for arch, items in sorted(designed.items()):
+        known = same_person(arch)
+        if not known and (len(items) < ARCHITECT_MIN_BUILDINGS or arch.startswith("Dienst")):
+            continue
+        aid = known[0] if known else "arch:" + re.sub(r"[^a-z0-9]+", "-", arch.lower()).strip("-")
+        if aid not in have:
+            firm = re.search(r"Architect|MVRDV|Studio|Bureau|Partners|Crouwel", arch)
+            nodes.append(dict(id=aid, type=ORG if firm else PERSON, label=arch, label_nl=arch, years="",
+                              desc="architects" if firm else "architect"))
+            have.add(aid)
+        for k, bags in items.items():
+            e = wiki_all[k]
+            src = (e.get("wiki") or e.get("wiki_nl") or {}).get("url") or "https://www.wikidata.org"
+            name = e.get("label") or "this building"
+            for bag in bags:
+                if bag in where:
+                    links.append(dict(e=aid, bag=bag, text=f"{name}: designed by {arch}.",
+                                      text_nl=f"{e.get('label_nl') or name}: ontworpen door {arch}.", source=src,
+                                      via="Architects (Wikidata)"))
+    print(sum(1 for n in nodes if n.get("desc", "").startswith("architect")), "architects")
+
     # Residents: one node per person, linked by the quote that names the address.
     for r in json.load(open("data/residents.json")):
         # Only residents known well beyond the city (Wikipedia in RESIDENT_MIN_LINKS languages or more), or one
         # who is already an entity, so the graph stays readable.
         if r["bag"] not in where or (r["links"] < RESIDENT_MIN_LINKS and not any(
-                e[1] == PERSON and re.search(e[5], r["person"]) for e in ENTITIES)):
+                [same_person(r["person"])])):
             continue
         # A resident who is already an entity (Vermeer, Agneta Matthes) joins that node.
-        known = next((e for e in ENTITIES if e[1] == PERSON and re.search(e[5], r["person"])), None)
+        known = same_person(r["person"])
         rid = known[0] if known else "res:" + r["wikidata"].rsplit("/", 1)[1]
         if not known and not any(n["id"] == rid for n in nodes):
             years = "–".join(x for x in (r["born"], r["died"]) if x)

@@ -1693,13 +1693,15 @@ const totals = periods.map(() => 0);
 for (const v of Object.values(config.histogram)) v.forEach((n, i) => totals[i] += n);
 const fmt = n => n.toLocaleString(fmtLocale());
 let activeLayer = null;
-const SECTION_ORDER = ['Discover', 'Architecture', 'Trade and empire', 'Faith and community', 'Countries and communities',
-  'The modern city', 'War and occupation'];
+const SECTION_ORDER = ['Discover', 'Architecture', 'Trade and empire', 'Art and craft', 'Science and learning',
+  'Faith and community', 'Countries and communities', 'The modern city', 'War and occupation'];
 const groupOn = {};
 let maskTarget = periods.map(() => 1);
 
 const ICON = {
   'Buildings today': '<path d="M2.5 14.5h11"/><rect x="3" y="8" width="2.6" height="6.5"/><rect x="6.7" y="4" width="2.6" height="10.5"/><rect x="10.4" y="6" width="2.6" height="8.5"/>',
+  'Art and craft': '<path d="M6 1.5h4M6.6 1.5v2.6C4.2 5.5 3.6 8 4 10.5c.4 2.4 1.9 4 4 4s3.6-1.6 4-4c.4-2.5-.2-5-2.6-6.4V1.5"/><path d="M5.2 8.5c1.8.8 3.8.8 5.6 0"/>',
+  'Science and learning': '<path d="M6 1.5h4M6.8 1.5v4.5L3 13.2c-.4.7.1 1.3.9 1.3h8.2c.8 0 1.3-.6.9-1.3L9.2 6V1.5"/><path d="M4.6 10.5h6.8"/>',
   'Discover': '<circle cx="8" cy="8" r="6.2"/><path d="M10.6 5.4 9 9 5.4 10.6 7 7z"/>',
   'Architecture': '<path d="M3 14.5V7l5-4.5L13 7v7.5z"/><path d="M6.5 14.5v-4h3v4"/>',
   'Trade and empire': '<path d="M2 11h12l-1.8 3H3.8z"/><path d="M8 2v9M8 3l4.5 6H8"/>',
