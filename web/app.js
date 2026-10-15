@@ -1722,6 +1722,8 @@ document.getElementById('scene')?.addEventListener('pointerdown', () => {
   if (phone.matches && !panelEl.classList.contains('collapsed')) setCollapsed(true);
 });
 function collapsePanelOnPhone() { if (phone.matches) setCollapsed(true); }
+// On a phone, choosing Layers in the mode bar opens the list of layers.
+document.querySelector(`.modes button[data-mode="${MODE.layers}"]`)?.addEventListener('click', () => { if (phone.matches) setCollapsed(false); });
 setCollapsed(phone.matches);
 const totals = periods.map(() => 0);
 for (const v of Object.values(config.histogram)) v.forEach((n, i) => totals[i] += n);
