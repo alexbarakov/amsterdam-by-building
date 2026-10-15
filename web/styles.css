@@ -578,8 +578,12 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
 @media (max-width: 720px) {
   .find { top: calc(env(safe-area-inset-top, 0px) + 66px); width: 28px; }
   .find input { height: 28px; padding-left: 28px; background-position: 8px 50%; background-size: 12px; font-size: 12px; }
-  .panel.collapsed { top: calc(env(safe-area-inset-top, 0px) + 66px); bottom: auto; left: 48px; }
+  .panel.collapsed { top: calc(env(safe-area-inset-top, 0px) + 66px); bottom: auto !important; left: 48px; }
   .panel.collapsed .sheet-handle { height: 28px; padding: 0 10px 0 28px; font-size: 12px; line-height: 28px; }
   .panel.collapsed .sheet-handle::before { left: 10px; width: 10px; height: 8px; border-width: 1.5px; background-size: 100% 1.5px; }
-  .panel:not(.collapsed) { top: calc(env(safe-area-inset-top, 0px) + 102px); bottom: auto; max-height: 62dvh; }
+  .panel:not(.collapsed) { top: calc(env(safe-area-inset-top, 0px) + 102px); bottom: auto !important; max-height: 62dvh; }
 }
+
+/* While a walk or a quest is open, only it is filled in the mode bar; the colouring under it stays as it was. */
+.modes:has(.walks-open[aria-pressed="true"], .quests-open[aria-pressed="true"]) button[data-mode][aria-pressed="true"] {
+  background: none; color: inherit; }

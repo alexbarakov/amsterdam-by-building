@@ -86,11 +86,19 @@ function init(G) {
   for (let i = 0; i < 600; i++) sim.tick();
   sim.on('tick')();
   const home = () => {
-    const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
-    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    // the box of the dots and of the labels that are drawn, so no name runs off the screen
+    let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
+    nodeSel.each(function (n) {
+      x0 = Math.min(x0, n.x - r(n)); x1 = Math.max(x1, n.x + r(n)); y0 = Math.min(y0, n.y - r(n)); y1 = Math.max(y1, n.y + r(n));
+      const el = this.querySelector('text');
+      if (!el || el.classList.contains('clash') || getComputedStyle(el).display === 'none') return;
+      const bb = el.getBBox();
+      x1 = Math.max(x1, n.x + bb.x + bb.width); x0 = Math.min(x0, n.x + bb.x); y0 = Math.min(y0, n.y + bb.y);
+    });
     // a phone gets the whole graph on screen, smaller; a wide screen keeps it readable and leaves room for labels
     const wide = innerWidth > 720;
-    const top = 70, bottom = wide ? 20 : innerHeight * .46, left = panelW() + 20, right = wide ? 140 : 70;
+    const sheet = document.querySelector('.g-panel')?.getBoundingClientRect();
+    const top = 70, bottom = wide ? 20 : sheet && sheet.top > innerHeight * .3 ? innerHeight - sheet.top + 12 : innerHeight * .46, left = wide ? panelW() + 20 : 12, right = wide ? 140 : 12;
     const k = Math.max(wide ? .7 : .3, Math.min(1.2, (W() - left - right) / (x1 - x0 + 1), (H() - top - bottom) / (y1 - y0 + 1)));
     homeK = k;
     return d3.zoomIdentity.translate(left + (W() - left - right - k * (x1 + x0)) / 2 + k * 0, top + (H() - top - bottom - k * (y1 + y0)) / 2).scale(k);
@@ -231,4 +239,5 @@ function init(G) {
   });
   addEventListener('resize', () => svg.call(zoom.transform, home()));
   applyLang();
+  svg.call(zoom.transform, home());  // again, now that crowded labels are hidden and the box is known
 }

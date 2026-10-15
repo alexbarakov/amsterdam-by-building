@@ -1568,7 +1568,10 @@ function makeWalk() {
   walkRoute = w;
   walksDlg.close();
   drawWalk(w);
+  walkEl.hidden = true;
   renderWalk();
+  // on a phone a new walk opens folded to its bar, so the route on the map is what one sees first
+  if (phone.matches) walkEl.classList.add('folded');
   const xs = w.route.map(p => p.x), zs = w.route.map(p => p.z);
   const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
   flyTo((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...zs) + Math.min(...zs)) / 2, null, Math.max(600, span * 2.2));
@@ -1581,8 +1584,9 @@ function renderWalk() {
   if (!w) return;
   const mins = Math.round(w.length / 1000 / WALK_KMH * 60 + w.stops.length * STOP_MIN);
   const inGoogle = new Set(googleStops(w));
+  const folded = !walkEl.hidden && walkEl.classList.contains('folded');
   walkEl.hidden = false;
-  walkEl.className = 'walkcard';
+  walkEl.className = 'walkcard' + (folded ? ' folded' : '');
   walkEl.innerHTML = `
     <button class="q-close" aria-label="${t('Close')}">×</button>
     <header><b>${t('Your walk')}</b><span class="w-meta">${(w.length / 1000).toFixed(1).replace('.', LANG === 'nl' ? ',' : '.')} km · ${t('about {m} min').replace('{m}', mins)}</span></header>
