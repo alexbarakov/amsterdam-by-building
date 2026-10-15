@@ -7,14 +7,14 @@ curated layer (checked against Wikipedia by s08_curated) or a 'Did you know' fac
 (id, type, English label, Dutch label, years, regex on the English text)
 """
 
-PERSON, EVENT, ORG = "person", "event", "organisation"
+PERSON, EVENT, ORG, ARCH = "person", "event", "organisation", "architect"
 
 ENTITIES = [
     # people
     ("rembrandt", PERSON, "Rembrandt", "Rembrandt", "1606–1669", r"Rembrandt"),
-    ("dekeyser", PERSON, "Hendrick de Keyser", "Hendrick de Keyser", "1565–1621", r"Hendrick de Keyser"),
-    ("berlage", PERSON, "Hendrik Petrus Berlage", "Hendrik Petrus Berlage", "1856–1934", r"Berlage"),
-    ("deklerk", PERSON, "Michel de Klerk", "Michel de Klerk", "1884–1923", r"de Klerk"),
+    ("dekeyser", ARCH, "Hendrick de Keyser", "Hendrick de Keyser", "1565–1621", r"Hendrick de Keyser"),
+    ("berlage", ARCH, "Hendrik Petrus Berlage", "Hendrik Petrus Berlage", "1856–1934", r"Berlage"),
+    ("deklerk", ARCH, "Michel de Klerk", "Michel de Klerk", "1884–1923", r"de Klerk"),
     ("descartes", PERSON, "René Descartes", "René Descartes", "1596–1650", r"Descartes"),
     ("louisnapoleon", PERSON, "Louis Napoleon", "Lodewijk Napoleon", "1778–1846", r"Louis Napoleon"),
     ("hudson", PERSON, "Henry Hudson", "Henry Hudson", "c. 1565–1611", r"Hudson"),
@@ -53,11 +53,11 @@ ENTITIES = [
     ("diamond", ORG, "Diamond trade", "Diamanthandel", "", r"diamond"),
     ("hermitage", ORG, "Hermitage Amsterdam", "Hermitage Amsterdam", "2009–2023", r"Hermitage"),
     # from the layers of curated_more.py
-    ("vancampen", PERSON, "Jacob van Campen", "Jacob van Campen", "1596–1657", r"van Campen"),
-    ("vingboons", PERSON, "Philips and Justus Vingboons", "Philips en Justus Vingboons", "17th century", r"Vingboons"),
-    ("stalpaert", PERSON, "Daniël Stalpaert", "Daniël Stalpaert", "1615–1676", r"Stalpaert"),
-    ("cuypers", PERSON, "Pierre Cuypers", "Pierre Cuypers", "1827–1921", r"Cuypers"),
-    ("vangendt", PERSON, "Dolf van Gendt", "Dolf van Gendt", "1835–1901", r"van Gendt"),
+    ("vancampen", ARCH, "Jacob van Campen", "Jacob van Campen", "1596–1657", r"van Campen"),
+    ("vingboons", ARCH, "Philips and Justus Vingboons", "Philips en Justus Vingboons", "17th century", r"Vingboons"),
+    ("stalpaert", ARCH, "Daniël Stalpaert", "Daniël Stalpaert", "1615–1676", r"Stalpaert"),
+    ("cuypers", ARCH, "Pierre Cuypers", "Pierre Cuypers", "1827–1921", r"Cuypers"),
+    ("vangendt", ARCH, "Dolf van Gendt", "Dolf van Gendt", "1835–1901", r"van Gendt"),
     ("vondel", PERSON, "Joost van den Vondel", "Joost van den Vondel", "1587–1679", r"Vondel\b(?!straat)"),
     ("hooft", PERSON, "P.C. Hooft", "P.C. Hooft", "1581–1647", r"Corneliszoon Hooft|\bHooft\b"),
     ("multatuli", PERSON, "Multatuli", "Multatuli", "1820–1887", r"Multatuli"),

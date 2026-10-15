@@ -23,7 +23,7 @@ def same_person(name):
     words = set(re.findall(r"[\w-]+", name.lower()))
     for e in ENTITIES:
         parts = re.findall(r"[\w-]+", e[2].lower())
-        if e[1] != PERSON:
+        if e[1] not in (PERSON, "architect"):
             continue
         if (len(parts) > 1 and parts[0] in words and parts[-1] in words) or (len(parts) == 1 and name.lower() == parts[0]):
             return e
@@ -91,7 +91,7 @@ def main():
         aid = known[0] if known else "arch:" + re.sub(r"[^a-z0-9]+", "-", arch.lower()).strip("-")
         if aid not in have:
             firm = re.search(r"Architect|MVRDV|Studio|Bureau|Partners|Crouwel", arch)
-            nodes.append(dict(id=aid, type=ORG if firm else PERSON, label=arch, label_nl=arch, years="",
+            nodes.append(dict(id=aid, type="architect", label=arch, label_nl=arch, years="",
                               desc="architects" if firm else "architect"))
             have.add(aid)
         for k, bags in items.items():

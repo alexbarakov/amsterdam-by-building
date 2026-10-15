@@ -1,7 +1,8 @@
 // The ontology graph: people, events and organisations, linked to the buildings (places) where a checked story ties
 // them (pipeline/s13_graph.py). Select points and open their buildings on the map: ./?focus=<id>,<id>.
 const TYPES = [
-  { key: 'person', en: 'People', nl: 'Mensen' },
+  { key: 'person', en: 'Residents', nl: 'Bewoners' },
+  { key: 'architect', en: 'Architects', nl: 'Architecten' },
   { key: 'event', en: 'Events', nl: 'Gebeurtenissen' },
   { key: 'organisation', en: 'Organisations', nl: 'Organisaties' },
   { key: 'place', en: 'Buildings', nl: 'Gebouwen' },
@@ -26,7 +27,7 @@ const EN = {
 };
 const t = (s, n) => ((LANG === 'nl' && NL[s]) || EN[s] || s).replace('{n}', n);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const COLOR = { person: '#1f3f9a', event: '#d0312d', organisation: '#c98a0f', place: '#7d858c' };
+const COLOR = { person: '#1f3f9a', architect: '#0f8a7e', event: '#d0312d', organisation: '#c98a0f', place: '#7d858c' };
 // The order points are selected in gives their colour on the map, as in the map's layers.
 const SEL_COLORS = ['#ec0000', '#1f4e8c', '#d99a12', '#2e8b57', '#7b3fa0', '#00909a', '#8c5a2b', '#d6336c'];  // the map's GROUP_COLORS
 
@@ -99,7 +100,7 @@ function init(G) {
     .on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
 
   // ---------- state ----------
-  const shown = { person: true, event: true, organisation: true, place: true };
+  const shown = { person: true, architect: true, event: true, organisation: true, place: true };
   let selected = (new URLSearchParams(location.search).get('select') || '').split(',').filter(id => byId.has(id));
   let query = '';
   const label = n => n.kind === 'place' ? n.name : (LANG === 'nl' && n.label_nl) || n.label;
