@@ -371,3 +371,117 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
     padding: 4px 11px; border: 0; border-radius: 999px; background: var(--paper); font-size: 12px; font-weight: 600; }
 }
 @media (prefers-reduced-motion: reduce) { .quest .q-feedback.miss, .q-stamp { animation: none; } }
+
+/* ---- ported from LAYRS: Delft: walks, the bar, the legend ---- */
+.walkcard { position: fixed; z-index: 11; right: var(--gutter); bottom: 132px; width: 340px; max-height: calc(100vh - 290px);
+  overflow-y: auto; background: var(--paper); border-radius: 12px; box-shadow: 0 2px 0 var(--red), 0 10px 30px rgba(20, 40, 100, .14); }
+.walkcard header { cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 11px 44px 10px 16px;
+  background: var(--red); color: var(--paper); border-radius: 12px 12px 0 0; }
+.walkcard header b { font-size: 13px; }
+.walkcard .q-close { position: absolute; top: 5px; right: 6px; width: 30px; height: 30px; border: 0; border-radius: 50%;
+  background: none; cursor: pointer; font-size: 18px; color: var(--paper); z-index: 1; }
+.walkcard .q-credit { font-size: 11px; color: var(--muted); padding: 4px 16px 0; margin: 0; }
+.walkcard .q-credit a { color: inherit; }
+.walkcard .q-riddle { margin: 0; padding: 10px 16px 0; font-size: 15px; line-height: 1.5; }
+.walkcard .q-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 16px 14px; }
+.walkcard .q-actions button { border: 1px solid var(--rule); background: var(--paper); border-radius: 999px;
+  padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.walkcard .q-actions button small { color: var(--muted); font-weight: 500; }
+.walkcard .q-actions .primary { background: var(--red); border-color: var(--red); color: var(--paper); }
+@media (max-width: 720px) {
+  .walkcard { left: 12px; right: 12px; width: auto; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 100px); max-height: 46vh; }
+}
+.walks { width: min(720px, calc(100vw - 32px)); }
+.walks article { padding: 22px 26px 24px; }
+.walks h2 { margin: 0; }
+.walks h3 { margin: 16px 0 8px; font-size: 13px; }
+.walks .w-lede { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.w-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.w-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--paper);
+  border-radius: 999px; padding: 5px 11px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink); }
+.w-chip .icon { width: 13px; height: 13px; }
+.w-chip[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: var(--paper); }
+.w-sep { width: 1px; height: 20px; background: var(--rule); margin: 0 4px; }
+.walks .w-note { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.walks .w-msg { margin: 14px 0 0; font-size: 13px; color: #b7791f; }
+.w-go { margin-top: 18px; }
+.w-make { border: 0; background: var(--red); color: var(--paper); border-radius: 999px; padding: 9px 18px;
+  cursor: pointer; font-size: 14px; font-weight: 700; }
+.walkcard { width: 340px; }
+.walkcard header .w-meta { margin-left: auto; font-size: 12px; opacity: .85; font-variant-numeric: tabular-nums; }
+.w-stops { list-style: none; margin: 8px 0 0; padding: 0; }
+.w-stops button { display: flex; gap: 10px; width: 100%; text-align: left; border: 0; background: none; padding: 7px 16px;
+  cursor: pointer; font: inherit; color: inherit; }
+.w-stops button:hover { background: #eef2fb; }
+.w-num { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: var(--paper);
+  display: grid; place-items: center; font-size: 12px; font-weight: 800; margin-top: 1px; }
+.w-stops b { display: block; font-size: 13px; }
+.w-stops em { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-style: normal; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.w-google { background: var(--red); color: var(--paper); border-radius: 999px; padding: 6px 14px; font-size: 12px;
+  font-weight: 700; text-decoration: none; }
+.walkcard .q-actions button { border: 1px solid var(--rule); background: var(--paper); border-radius: 999px;
+  padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.walkcard .q-credit { padding: 0 16px 12px; }
+@media (max-width: 720px) {
+  .walkcard { left: 12px; right: 12px; width: auto; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 100px); max-height: 46vh; }
+}
+.walkcard header { cursor: pointer; }
+.walkcard.folded .w-stops, .walkcard.folded .q-credit { display: none; }
+.w-locate { margin-bottom: 8px; }
+.w-share { border: 0; background: var(--red); color: var(--paper); border-radius: 999px; padding: 8px 16px;
+  cursor: pointer; font-size: 13px; font-weight: 700; }
+.walkcard > .q-actions { border-bottom: 1px solid var(--rule); }
+.walkcard .q-actions .w-kml { width: 28px; height: 28px; padding: 0; border: 0; background: none; color: var(--muted);
+  display: inline-grid; place-items: center; border-radius: 50%; margin-left: auto; }
+.walkcard .q-actions .w-kml:hover { color: var(--red); background: #eef2fb; }
+.walkcard .w-kml svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.w-stops .w-off .w-num { background: #9fb0d8; }
+.w-stops .w-off b { color: #4b5560; }
+.modes .modes-sep { flex: none; width: 1px; align-self: stretch; margin: 6px 6px; background: var(--rule); }
+.modes .walks-open, .modes .quests-open, .modes .graph-open { display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 999px; color: var(--ink); background: none; text-decoration: none; font-weight: 500; }
+.modes .walks-open svg, .modes .quests-open svg { width: 13px; height: 13px; fill: currentColor; }
+.modes .walks-open[aria-pressed="true"], .modes .quests-open[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.make-walk { margin: 10px 0 2px; border: 0; background: var(--red); color: var(--paper); border-radius: 999px;
+  padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 700; }
+/* One look for every item in the bar: plain text, an icon for the things to do, black when it is on. */
+.modes .walks-open, .modes .quests-open, .modes .graph-open { display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 999px; color: var(--ink); background: none; text-decoration: none; font-weight: 500; }
+.modes .walks-open svg, .modes .quests-open svg { width: 13px; height: 13px; fill: currentColor; }
+.modes button:not([aria-pressed="true"]):hover, .modes .graph-open:hover { background: var(--sky); }
+.modes .walks-open[aria-pressed="true"], .modes .quests-open[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+/* On a phone all five fit on one line, without scrolling. */
+@media (max-width: 720px) {
+  .modes { left: 50%; right: auto; transform: translateX(-50%); max-width: calc(100vw - 16px); }
+  .modes button, .modes .walks-open, .modes .quests-open, .modes .graph-open { padding: 7px 9px; font-size: 13.5px; }
+  .modes .modes-sep { margin: 6px 2px; }
+}
+/* Legend panel: never scrolls sideways; the way back to the list stays in view; the list is one line a layer. */
+.panel { overflow-x: hidden; }
+.jump { flex-wrap: wrap; gap: 4px; }
+.jump button { width: 30px; height: 30px; }
+.jump .icon { width: 16px; height: 16px; }
+.panel .back { position: sticky; top: -14px; z-index: 2; display: block; width: calc(100% + 32px); margin: -14px -16px 10px;
+  padding: 10px 16px; text-align: left; background: var(--paper); border-bottom: 1px solid var(--rule); color: var(--ink);
+  font-weight: 600; }
+.panel .back:hover { background: var(--sky); }
+.layers { margin: 0 -6px; gap: 0; }
+.layer { grid-template-columns: 1fr auto auto; align-items: baseline; gap: 0 10px; padding: 5px 6px; font-size: 13px; }
+.layer b { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer .era { grid-row: 1; grid-column: 2; font-size: 11px; white-space: nowrap; }
+.layer .n { grid-row: 1; grid-column: 3; font-size: 11px; min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.panel h2.section { margin: 10px 0 2px; font-size: 12px; }
+@media (max-width: 720px) { .panel .back { top: 0; margin-top: 0; } }
+/* The Quests item joins the bar like the others, on a phone too. */
+.modes .quests-open { border-left: 0; border-radius: 999px; margin-left: 0; }
+@media (max-width: 720px) {
+  .modes .quests-open { position: static; flex: none; box-shadow: none; }
+  .modes button { flex: none; }
+}
+/* On a phone, while a walk is open, the timeline gives its room to the map. */
+@media (max-width: 720px) {
+  body.walking .timeline, body.walking .howto { display: none; }
+  body.walking .modes { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
+  body.walking .panel { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
+}

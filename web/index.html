@@ -25,10 +25,10 @@
 
 <nav class="modes" aria-label="Colour the city by">
   <button data-mode="0" aria-pressed="true">Period</button>
-  <button data-mode="3" aria-pressed="false">Context layers</button>
-  <button data-mode="1" aria-pressed="false">Floors</button>
-  <button data-mode="2" aria-pressed="false">Energy</button>
-  <button class="quests-open" aria-haspopup="dialog"><svg viewBox="0 0 24 8" aria-hidden="true"><path d="M1 1l6 6M7 1L1 7M9 1l6 6M15 1L9 7M17 1l6 6M23 1l-6 6"/></svg><span>Quests</span></button>
+  <button data-mode="3" aria-pressed="false">Layers</button>
+  <span class="modes-sep" aria-hidden="true"></span>
+  <button class="walks-open" aria-haspopup="dialog"><span>Walk</span></button>
+  <button class="quests-open" aria-haspopup="dialog"><span>Quests</span></button>
 </nav>
 
 <div class="lang" role="group" aria-label="Language">
@@ -120,6 +120,11 @@
 
 <div id="card" class="card" hidden></div>
 <section id="quest" class="quest" hidden aria-live="polite"></section>
+<section id="walk" class="walkcard" hidden aria-live="polite"></section>
+<dialog id="walks" class="about walks" aria-labelledby="walks-title">
+  <button class="about-close" aria-label="Close">×</button>
+  <article id="walks-body"></article>
+</dialog>
 <dialog id="quests" class="about quests" aria-labelledby="quests-title">
   <button class="about-close" aria-label="Close">×</button>
   <article id="quests-body"></article>

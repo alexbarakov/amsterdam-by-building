@@ -475,7 +475,8 @@ def _curated_layer(L):
     def fn():
         out = {}
         for e in L["entries"]:
-            out.setdefault(e["bag"], []).append((e["group"], {"story": e["story"], "source": e["source"], "name": e["name"]}))
+            out.setdefault(e["bag"], []).append((e["group"], {"story": e["story"], "source": e["source"], "name": e["name"],
+                                                           "address": e["address"]}))
         if L["id"] == "jewish":
             # Synagogues in the monuments register that the curated list does not name.
             for nr, ps in monument_panden().items():

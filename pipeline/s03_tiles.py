@@ -156,6 +156,9 @@ def main():
         hist.setdefault(int(y), [0] * len(PERIODS))[p] += 1
     config = dict(
         city="amsterdam", label="Amsterdam", tileSize=TILE, origin=DAM,
+        # where a walk can start, besides the walker's own location
+        starts=[dict(en=en, nl=nl, x=round(x - DAM[0], 1), z=round(-(y - DAM[1]), 1)) for en, nl, x, y in
+                (("Dam", "Dam", *DAM), ("Centraal Station", "Centraal Station", 121880.0, 488060.0))],
         home=dict(x=0, z=200, azimuth=200, elevation=38, span=7000),
         periods=[dict(key=k, label=l, from_=a, to=bb, color=col) for k, l, a, bb, col in PERIODS],
         yearMin=int(years.min()), yearMax=int(years.max()),
