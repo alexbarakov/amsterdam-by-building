@@ -137,7 +137,7 @@ const NL_UI = {
   'Cancel': 'Annuleren',
   'Click the map where the walk should start.': 'Klik op de kaart waar de wandeling moet beginnen.',
   'This browser does not share its location.': 'Deze browser deelt geen locatie.',
-  'You seem to be outside the city, so the walk starts at the Markt.': 'Je lijkt buiten de stad te zijn, dus de wandeling begint op de Markt.',
+  'You seem to be outside the city, so the walk starts at {s}.': 'Je lijkt buiten de stad te zijn, dus de wandeling begint bij {s}.',
   'The location was not shared. Pick a start on the map instead.': 'De locatie werd niet gedeeld. Kies het begin op de kaart.',
   'No stories within reach. Try a longer walk or more interests.': 'Geen verhalen binnen bereik. Probeer een langere wandeling of meer interesses.',
   'about {m} min': 'ongeveer {m} min',
@@ -1243,6 +1243,8 @@ function markWalk() {
   document.body.classList.toggle('walking', !!walkRoute);
 }
 // ---------- Walks ----------
+// Where a walk can start besides the walker's location: the city config's list, else the map's centre.
+const STARTS = config.starts || [{ en: 'Centre', nl: 'Centrum', x: 0, z: 0 }];
 // A walk through the stories the walker cares about: pick interests, a start and a distance; the stops are the
 // buildings with a story in those layers, chosen greedily by story per metre and ordered by 2-opt. Distances are
 // straight lines times a detour factor; Google Maps gives the real walking route.
@@ -1470,12 +1472,12 @@ function drawWalk(w) {
 // ---- the planner
 function startPoint() {
   if (walkPrefs.at) return walkPrefs.at;
-  const s = config.starts[walkPrefs.start] || config.starts[0];
+  const s = STARTS[walkPrefs.start] || STARTS[0];
   return [s.x, s.z];
 }
 function renderWalkPlanner(msg = '') {
   const L = walkLayers(), sel = walkPrefs.layers;
-  const startName = walkPrefs.at ? (walkPrefs.atLabel || t('Your point')) : L10(config.starts[walkPrefs.start]);
+  const startName = walkPrefs.at ? (walkPrefs.atLabel || t('Your point')) : L10(STARTS[walkPrefs.start]);
   document.getElementById('walks-body').innerHTML = `
     <h2 id="walks-title">${t('Plan a walk')}</h2>
     <p class="w-lede">${t('Choose what interests you, where you start and how far you want to go. The walk links the buildings with stories on the way.')}</p>
@@ -1484,7 +1486,7 @@ function renderWalkPlanner(msg = '') {
       ? `<p class="w-note">${t('Start')}: ${esc(startName)}</p>`
       : `<button class="w-share" data-geo>${t(locating ? 'Asking for your location…' : 'Share my location')}</button>
          <p class="w-note">${t('Start from where you are: share your location, or choose a start below.')}</p>`}</div>
-    <div class="w-chips">${config.starts.map((s, i) => `<button class="w-chip" data-start="${i}" aria-pressed="${!walkPrefs.at && walkPrefs.start === i}">${esc(L10(s))}</button>`).join('')}
+    <div class="w-chips">${STARTS.map((s, i) => `<button class="w-chip" data-start="${i}" aria-pressed="${!walkPrefs.at && walkPrefs.start === i}">${esc(L10(s))}</button>`).join('')}
       <button class="w-chip" data-pick aria-pressed="${walkPrefs.atLabel === t('Point on the map')}">${t('Pick on the map')}</button></div>
     ${walkPrefs.atLabel === t('Your location') ? '' : `<p class="w-note">${t('Start')}: ${esc(startName)}</p>`}
     <h3>${t('What interests you')}</h3>
@@ -1521,7 +1523,7 @@ function requestLocation() {
   navigator.geolocation.getCurrentPosition(pos => {
     locating = false;
     const [x, z] = fromLatLon(pos.coords.latitude, pos.coords.longitude);
-    if (Math.hypot(x, z) > 6000) { renderWalkPlanner(t('You seem to be outside the city, so the walk starts at the Markt.')); return; }
+    if (Math.hypot(x, z) > 6000) { renderWalkPlanner(t('You seem to be outside the city, so the walk starts at {s}.').replace('{s}', L10(STARTS[0]))); return; }
     walkPrefs.at = [x, z]; walkPrefs.atLabel = t('Your location'); renderWalkPlanner();
   }, () => { locating = false; renderWalkPlanner(t('The location was not shared. Pick a start on the map instead.')); },
   { enableHighAccuracy: true, timeout: 10000 });
