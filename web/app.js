@@ -1634,6 +1634,47 @@ walksDlg.addEventListener('click', e => { if (e.target === walksDlg) walksDlg.cl
   }
 }
 
+// ---------- From the graph ----------
+// graph.html opens the map with ./?focus=<id>,<id>: the buildings of those people, events or places light up,
+// each selection in its own colour, and the rest of the city turns into a white model.
+const focusEl = document.getElementById('focus');
+const focusIds = (new URLSearchParams(location.search).get('focus') || '').split(',').filter(Boolean);
+if (focusIds.length) fetch('data/graph.json').then(r => r.json()).then(G => showFocus(G, focusIds)).catch(() => {});
+function showFocus(G, ids) {
+  const groups = [];
+  ids.forEach((id, i) => {
+    const node = G.nodes.find(n => n.id === id), place = G.places[id];
+    if (!node && !place) return;
+    const bags = place ? place.bags : G.links.filter(l => l.e === id).flatMap(l => G.places[l.p].bags);
+    const label = place ? place.name : (LANG === 'nl' && node.label_nl) || node.label;
+    groups.push({ label, color: i % GROUP_COLORS.length, gids: [...new Set(bags)].map(gidOf).filter(g => g >= 0) });
+  });
+  const gids = [], grp = [];
+  for (const g of groups) for (const gid of g.gids) {
+    if (!gids.includes(gid) && gids.length < FOCUS_MAX) { gids.push(gid); grp.push(g.color); }
+  }
+  if (!gids.length) return;
+  uniforms.uFocus.value = [...gids, ...Array(FOCUS_MAX - gids.length).fill(-1)];
+  uniforms.uFocusGroup.value = [...grp, ...Array(FOCUS_MAX - grp.length).fill(0)];
+  uniforms.uFocusN.value = gids.length;
+  const pts = gids.map(building);
+  const cx = pts.reduce((a, b) => a + b.x, 0) / pts.length, cz = pts.reduce((a, b) => a + b.z, 0) / pts.length;
+  const spread = Math.max(...pts.map(b => Math.hypot(b.x - cx, b.z - cz)));
+  flyTo(cx, cz, null, Math.min(4200, Math.max(380, spread * 2.4)));
+  const back = `graph.html?select=${encodeURIComponent(ids.join(','))}${LANG === 'nl' ? '&lang=nl' : ''}`;
+  focusEl.innerHTML = `<header><b>${t('From the graph')}</b><button class="f-close" aria-label="${t('Close')}">×</button></header>
+    <ul>${groups.map(g => `<li><i style="background:${GROUP_COLORS[g.color]}"></i><span>${esc(g.label)}</span>
+      <small>${g.gids.length}</small></li>`).join('')}</ul>
+    <div class="f-actions"><button class="make-walk">${t('Generate a walk')}</button><a class="f-back" href="${back}">${t('Back to the graph')}</a></div>`;
+  focusEl.hidden = false;
+  focusEl.querySelector('.make-walk').onclick = () => { focusEl.hidden = true; walkFromGroups(groups); };
+  focusEl.querySelector('.f-close').onclick = () => {
+    uniforms.uFocusN.value = 0;
+    focusEl.hidden = true;
+    const u = new URL(location.href); u.searchParams.delete('focus'); history.replaceState(null, '', u);
+  };
+}
+
 // ---------- Panel ----------
 const panelEl = document.getElementById('panel');
 const panel = document.getElementById('panel-body');
@@ -1935,6 +1976,8 @@ function applyStaticText() {
   document.querySelector('.walks-open span').textContent = LANG === 'nl' ? 'Route' : 'Walk';
   document.querySelectorAll('[data-lang-block]').forEach(a => { a.hidden = a.dataset.langBlock !== LANG; });
   document.querySelectorAll('.modes button[data-mode]').forEach(b => { b.textContent = t(b.dataset.label); });
+  document.querySelector('.graph-open span').textContent = t('Graph');
+  document.querySelector('.graph-open').href = LANG === 'nl' ? 'graph.html?lang=nl' : 'graph.html';
   document.querySelector('.quests-open span').textContent = LANG === 'nl' ? 'Raadsels' : 'Quests';  // short, so the bar fits a phone
   document.querySelector('.tally-count').childNodes[1].textContent = ' ' + t('buildings');
   document.querySelector('.howto').textContent = t('Drag to turn. Right-drag or Shift-drag to move. Scroll to zoom.');

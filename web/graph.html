@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LAYRS: Amsterdam — the graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="graph.css">
+<script src="vendor/d3.min.js" defer></script>
+<script src="graph.js" defer></script>
+</head>
+<body>
+<header class="g-head">
+  <a class="g-home" href="./"><span class="g-mark">LAYRS</span>Amsterdam</a>
+  <nav class="g-nav" aria-label="Views">
+    <a href="./" data-i18n="Map">Map</a>
+    <a href="./graph.html" aria-current="page" data-i18n="Graph">Graph</a>
+  </nav>
+  <div class="g-lang" role="group" aria-label="Language">
+    <button data-lang="en" aria-pressed="true">EN</button><button data-lang="nl" aria-pressed="false">NL</button>
+  </div>
+</header>
+
+<aside class="g-panel" aria-label="Graph controls">
+  <h1 data-i18n="People, events and the buildings they touched">People, events and the buildings they touched</h1>
+  <p class="g-lede" data-i18n="lede">Every line is a checked story about a building. Pick one or more points, then open them on the map.</p>
+  <input class="g-search" type="search" placeholder="Find a name" data-i18n-placeholder="Find a name" aria-label="Find a name">
+  <div class="g-types" role="group" aria-label="Show"></div>
+  <section class="g-selection" hidden>
+    <ul class="g-chips"></ul>
+    <a class="g-open" href="./"></a>
+    <button class="g-clear" data-i18n="Clear">Clear</button>
+  </section>
+  <section class="g-evidence"></section>
+  <p class="g-hint" data-i18n="hint">Squares are buildings. Click a point to select it; click more to add them.</p>
+</aside>
+
+<svg class="g-svg" role="img" aria-label="Graph of people, events and organisations linked to buildings"></svg>
+<div class="g-tip" hidden></div>
+</body>
+</html>

@@ -485,3 +485,27 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
   body.walking .modes { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); }
   body.walking .panel { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 }
+
+/* The way to the graph, and what the graph opened on the map. */
+.modes .graph-open { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px;
+  text-decoration: none; color: var(--ink); font-weight: 500; }
+.modes .graph-open svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.modes .graph-open svg circle { fill: currentColor; stroke: none; }
+.modes .graph-open:hover { background: var(--sky); }
+.focusbox { position: fixed; z-index: 11; right: var(--gutter); bottom: 132px; width: 280px; background: var(--paper);
+  border-radius: 12px; box-shadow: 0 2px 0 var(--red), 0 10px 30px rgba(0, 0, 0, .12); padding: 0 0 12px; }
+.focusbox header { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 8px 16px;
+  border-bottom: 1px solid var(--rule); }
+.focusbox .f-close { width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; cursor: pointer; font-size: 18px; color: var(--muted); }
+.focusbox ul { list-style: none; margin: 8px 0 0; padding: 0 16px; display: flex; flex-direction: column; gap: 5px; }
+.focusbox li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.focusbox li i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.focusbox li small { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.focusbox .f-back { display: inline-block; margin: 10px 16px 0; font-size: 12px; color: var(--ink); text-decoration-color: var(--red); text-underline-offset: 3px; }
+@media (max-width: 720px) {
+  .focusbox { left: 12px; right: 12px; width: auto; bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 100px); }
+}
+.f-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.f-actions .make-walk { margin: 0; }
+.focusbox .f-actions { margin: 10px 16px 0; }
+.focusbox .f-actions .f-back { margin: 0; }

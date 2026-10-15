@@ -26,6 +26,7 @@
 <nav class="modes" aria-label="Colour the city by">
   <button data-mode="0" aria-pressed="true">Period</button>
   <button data-mode="3" aria-pressed="false">Layers</button>
+  <a class="graph-open" href="graph.html"><span>Graph</span></a>
   <span class="modes-sep" aria-hidden="true"></span>
   <button class="walks-open" aria-haspopup="dialog"><span>Walk</span></button>
   <button class="quests-open" aria-haspopup="dialog"><span>Quests</span></button>
@@ -119,6 +120,7 @@
 </aside>
 
 <div id="card" class="card" hidden></div>
+<section id="focus" class="focusbox" hidden aria-live="polite"></section>
 <section id="quest" class="quest" hidden aria-live="polite"></section>
 <section id="walk" class="walkcard" hidden aria-live="polite"></section>
 <dialog id="walks" class="about walks" aria-labelledby="walks-title">
