@@ -544,3 +544,15 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
   .find-results, .find-sel { width: calc(100vw - 24px); }
 }
 .find-sel[hidden], .find-results[hidden] { display: none; }
+
+/* Dialogs on a phone: a full-screen sheet within the visible screen (dvh, not vh, which on iOS runs under the
+   browser's bars) and clear of the notch, with the close button always in reach at the top. */
+.about { max-height: calc(100dvh - 48px); }
+@media (max-width: 720px) {
+  .about, .about.walks, .about.quests { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0;
+    border-radius: 0; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); overscroll-behavior: contain; }
+  .about-close { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; float: none; margin: 0;
+    width: 40px; height: 40px; z-index: 2; box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+  .about article { padding-top: 22px; }
+  .about article h2 { padding-right: 44px; }
+}
