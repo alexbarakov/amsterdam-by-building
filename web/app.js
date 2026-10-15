@@ -94,7 +94,7 @@ const NL_UI = {
   'Period': 'Periode', 'Layers': 'Lagen', 'Floors': 'Verdiepingen', 'Energy': 'Energie',
   'buildings': 'gebouwen', 'Building the city': 'De stad wordt gebouwd',
   'Drag to turn. Right-drag or Shift-drag to move. Scroll to zoom.': 'Sleep om te draaien. Rechts slepen of Shift-slepen om te verschuiven. Scroll om te zoomen.',
-  'Show legend': 'Legenda tonen', 'Hide legend': 'Legenda verbergen',
+  'Show legend': 'Legenda tonen', 'Hide legend': 'Legenda verbergen', 'Legend': 'Legenda',
   'Built in': 'Gebouwd in', 'Click a period to see it alone. Paler buildings have an approximate year.': 'Klik op een periode om alleen die te zien. Lichtere gebouwen hebben een geschat bouwjaar.',
   'Storeys': 'Verdiepingen', 'Energy label': 'Energielabel',
   'RVO energy labels, via Atlas Leefomgeving': 'Energielabels van RVO, via Atlas Leefomgeving',
@@ -1702,9 +1702,21 @@ const phone = matchMedia('(max-width: 720px)');
 function setCollapsed(c) {
   panelEl.classList.toggle('collapsed', c);
   sheetHandle.setAttribute('aria-expanded', String(!c));
-  sheetHandle.textContent = t(c ? 'Show legend' : 'Hide legend');
+  sheetHandle.textContent = t('Legend');
+  sheetHandle.setAttribute('aria-label', t(c ? 'Show legend' : 'Hide legend'));
 }
-sheetHandle.onclick = () => setCollapsed(!panelEl.classList.contains('collapsed'));
+let sheetSwiped = false;
+sheetHandle.onclick = () => { if (sheetSwiped) { sheetSwiped = false; return; } setCollapsed(!panelEl.classList.contains('collapsed')); };
+// On a phone the open legend folds when the map is touched, or when its bar is swiped down.
+let sheetDown = null;
+sheetHandle.addEventListener('pointerdown', e => { sheetDown = e.clientY; });
+sheetHandle.addEventListener('pointerup', e => {
+  if (sheetDown !== null && e.clientY - sheetDown > 30) { setCollapsed(true); sheetSwiped = true; }
+  sheetDown = null;
+});
+document.getElementById('scene')?.addEventListener('pointerdown', () => {
+  if (phone.matches && !panelEl.classList.contains('collapsed')) setCollapsed(true);
+});
 function collapsePanelOnPhone() { if (phone.matches) setCollapsed(true); }
 setCollapsed(phone.matches);
 const totals = periods.map(() => 0);
@@ -2179,7 +2191,8 @@ function applyStaticText() {
   const ld = document.getElementById('loading'); if (ld.firstChild) ld.firstChild.textContent = t('Building the city') + ' ';
   playBtn.setAttribute('aria-label', t(playing ? 'Pause' : "Play the city's growth"));
   document.querySelectorAll('.lang [data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === LANG));
-  sheetHandle.textContent = t(panelEl.classList.contains('collapsed') ? 'Show legend' : 'Hide legend');
+  sheetHandle.textContent = t('Legend');
+  sheetHandle.setAttribute('aria-label', t(panelEl.classList.contains('collapsed') ? 'Show legend' : 'Hide legend'));
 }
 document.querySelectorAll('.modes button[data-mode]').forEach(b => { b.dataset.label = b.textContent.trim(); });
 const about = document.getElementById('about');

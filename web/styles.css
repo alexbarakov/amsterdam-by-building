@@ -556,3 +556,19 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
   .about article { padding-top: 22px; }
   .about article h2 { padding-right: 44px; }
 }
+
+/* The legend on a phone: folded, a small "Legend" pill over the mode bar; open, a sheet with a grab bar and a ×.
+   A touch on the map or a swipe down on the bar folds it again (app.js). */
+@media (max-width: 720px) {
+  .panel.collapsed { right: auto; width: auto; padding: 0; border-radius: 999px; box-shadow: 0 1px 0 var(--rule), 0 4px 14px rgba(0, 0, 0, .08); }
+  .panel.collapsed .sheet-handle { width: auto; margin: 0; padding: 8px 14px 8px 34px; font-size: 13px; position: relative; }
+  .panel.collapsed .sheet-handle::before { content: ""; position: absolute; left: 14px; top: 50%; width: 12px; height: 9px;
+    transform: translateY(-50%); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    background: linear-gradient(var(--ink), var(--ink)) center / 100% 2px no-repeat; }
+  .panel.collapsed .sheet-handle::after { content: none; }
+  .panel:not(.collapsed) .sheet-handle { position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 16px 14px 10px; }
+  .panel:not(.collapsed) .sheet-handle::before { content: ""; position: absolute; left: 50%; top: 6px; width: 36px; height: 4px;
+    margin-left: -18px; border-radius: 2px; background: var(--rule); }
+  .panel:not(.collapsed) .sheet-handle::after { content: "×"; width: auto; height: auto; border: 0; transform: none; margin: -4px 0 0;
+    font-size: 22px; line-height: 1; font-weight: 400; color: var(--muted); }
+}
