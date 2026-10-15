@@ -2,7 +2,7 @@
    buildings are small dark squares, the same blocks the map is made of. */
 :root {
   --sky: #e4e8ea; --paper: #fff; --ink: #000; --muted: #5d6266; --rule: #cfd5d8; --accent: #ec0000;
-  --person: #1f3f9a; --event: #d0312d; --org: #c98a0f; --place: #2b2f33;
+  --person: #1f3f9a; --event: #d0312d; --org: #c98a0f; --place: #7d858c;
   --gutter: clamp(16px, 2.4vw, 32px);
   font: 400 14px/1.5 "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
 }

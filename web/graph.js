@@ -26,7 +26,7 @@ const EN = {
 };
 const t = (s, n) => ((LANG === 'nl' && NL[s]) || EN[s] || s).replace('{n}', n);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const COLOR = { person: '#1f3f9a', event: '#d0312d', organisation: '#c98a0f', place: '#2b2f33' };
+const COLOR = { person: '#1f3f9a', event: '#d0312d', organisation: '#c98a0f', place: '#7d858c' };
 // The order points are selected in gives their colour on the map, as in the map's layers.
 const SEL_COLORS = ['#ec0000', '#1f4e8c', '#d99a12', '#2e8b57', '#7b3fa0', '#00909a', '#8c5a2b', '#d6336c'];  // the map's GROUP_COLORS
 
@@ -50,12 +50,14 @@ function init(G) {
   const svg = d3.select('.g-svg');
   const root = svg.append('g');
   const linkSel = root.append('g').selectAll('line').data(links).join('line').attr('class', 'link');
-  const nodeSel = root.append('g').selectAll('g').data(nodes).join('g')
+  // Buildings are drawn first, so the people's and events' labels always sit on top of the squares.
+  const drawOrder = [...nodes.filter(n => n.kind === 'place'), ...nodes.filter(n => n.kind !== 'place')];
+  const nodeSel = root.append('g').selectAll('g').data(drawOrder).join('g')
     .attr('class', d => `node ${d.kind} t${tier(d)}${d.kind === 'place' && d.deg >= 3 ? ' big' : ''}`);
   // Size and label weight follow how many places a point touches: the hubs read first, the single links last.
   nodeSel.filter(d => d.kind === 'entity').append('circle').attr('r', r).attr('fill', d => COLOR[d.type]);
   nodeSel.filter(d => d.kind === 'place').append('rect')
-    .attr('x', -4.5).attr('y', -4.5).attr('width', 9).attr('height', 9).attr('rx', 1.5).attr('fill', COLOR.place);
+    .attr('x', -3.5).attr('y', -3.5).attr('width', 7).attr('height', 7).attr('rx', 1.5).attr('fill', COLOR.place);
   nodeSel.append('text').attr('dx', d => d.kind === 'place' ? 8 : r(d) + 5).attr('dy', d => tier(d) === 1 ? 5 : 4);
 
   const W = () => innerWidth, H = () => innerHeight;
