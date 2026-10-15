@@ -19,6 +19,8 @@ open data ──► pipeline/ (Python) ──► web/data/ (binary tiles + JSON)
 |---|---|
 | `s00_fetch_*` | Downloads BGT water, the city's open datasets, energy labels, BAG addresses |
 | `s01_load` | 3D BAG tiles → buildings and their LoD 1.3 parts |
+| `s01c_roofs` | LoD 2.2 roof faces per building; the viewer raises the walls from their open edges (centre and listed buildings) |
+| `s01d_spires` | Towers and spires above the model, as 0.5 m columns from the AHN surface model (needs rasterio) |
 | `s02_attributes` | Cleans construction years (placeholders, rounded years, monument register), floors, heights |
 | `s03_tiles` | Packs 600 m tiles into 8 bundles, writes per-building attributes and the city config |
 | `s04_water` | Water and land polygons |
@@ -38,7 +40,7 @@ open data ──► pipeline/ (Python) ──► web/data/ (binary tiles + JSON)
 ```bash
 uv sync
 # raw inputs: see the docstrings of s00_* and s01_load (3D BAG tiles, PDOK boundary, RCE and Wikidata exports)
-for s in s01_load s02_attributes s05_layers s03_tiles s04_water s06_wiki s07_labels s12_archive s13_quests s14_search; do uv run python -m pipeline.$s; done
+for s in s01_load s02_attributes s01c_roofs s01d_spires s05_layers s03_tiles s04_water s06_wiki s07_labels s12_archive s13_quests s14_search; do uv run python -m pipeline.$s; done
 python3 -m http.server 8642 --directory web
 ```
 
