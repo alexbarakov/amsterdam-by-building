@@ -587,3 +587,11 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
 /* While a walk or a quest is open, only it is filled in the mode bar; the colouring under it stays as it was. */
 .modes:has(.walks-open[aria-pressed="true"], .quests-open[aria-pressed="true"]) button[data-mode][aria-pressed="true"] {
   background: none; color: inherit; }
+
+/* iOS draws a search field at its own size unless told not to: keep the folded field exactly a 28 px magnifier,
+   so the legend beside it never overlaps it. The panel starts folded in the HTML, so it does not jump on load. */
+.find input { -webkit-appearance: none; appearance: none; min-width: 0; }
+.find input::-webkit-search-decoration { -webkit-appearance: none; }
+@media (max-width: 720px) {
+  .find:not(:focus-within):not(:has(.find-sel:not([hidden]))) { overflow: hidden; border-radius: 999px; }
+}
