@@ -40,7 +40,7 @@ function init(G) {
   const byId = new Map(nodes.map(n => [n.id, n]));
   // Tier 1: a point linked to four or more places; tier 2: two or three; tier 3: one.
   const tier = d => d.kind === 'place' ? 3 : d.deg >= 4 ? 1 : d.deg >= 2 ? 2 : 3;
-  const r = d => d.kind === 'place' ? 0 : [0, 11 + d.deg * 1.6, 8, 5.5][tier(d)];
+  const r = d => d.kind === 'place' ? 0 : [0, Math.min(30, 9 + 3.4 * Math.sqrt(d.deg)), 8, 5.5][tier(d)];
   const links = G.links.map(l => ({ source: l.e, target: l.p, texts: l.texts }));
   for (const n of nodes) n.deg = 0;
   for (const l of links) { byId.get(l.source).deg++; byId.get(l.target).deg++; }
@@ -139,7 +139,7 @@ function init(G) {
       if (!shownNow) continue;
       const bb = el.getBBox();
       const box = [n.x + bb.x - 2, n.y + bb.y - 1, n.x + bb.x + bb.width + 2, n.y + bb.y + bb.height + 1, n.id];
-      if (boxes.some(b => b[4] !== n.id && hit(box, b))) el.classList.add('clash');
+      if (tier(n) > 1 && boxes.some(b => b[4] !== n.id && hit(box, b))) el.classList.add('clash');  // hubs always keep theirs
       else boxes.push(box);
     }
   }
