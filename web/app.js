@@ -177,6 +177,9 @@ const NL_UI = {
   'From the graph': 'Uit de graaf',
   'Back to the graph': 'Terug naar de graaf',
   'Graph': 'Graaf',
+  'Search a building, address or street': 'Zoek een gebouw, adres of straat', 'Search': 'Zoeken', 'Address': 'Adres',
+  'Building': 'Gebouw', 'Lived here': 'Woonde hier', 'Street': 'Straat', 'Nothing found': 'Niets gevonden', 'Clear': 'Wissen',
+  '{n} is not in the register; nearest on the same side': '{n} staat niet in het register; het dichtstbijzijnde nummer aan dezelfde kant',
   'Before 1536': 'Vóór 1536',
   '1536–1653 After the great fire': '1536–1653 Na de stadsbrand',
   '1654–1799 After the thunderclap': '1654–1799 Na de Delftse donderslag',
@@ -352,9 +355,18 @@ const uniforms = {
   uFocusGroup: { value: Array(FOCUS_MAX).fill(0) },
   uFocusN: { value: 0 },
   uBlind: { value: 0 },
+  // Search: per building whether it is lit; while uPickOn is 1 the found buildings keep their colour and the rest dims.
+  uPick: { value: null },
+  uPickOn: { value: 0 },
   uFogColor: { value: col(SKY) },
   uFog: { value: new THREE.Vector2(9000, 26000) },
 };
+
+const PICK_ROWS = Math.ceil(config.stats.buildings / ATTR_W);
+const pickData = new Uint8Array(ATTR_W * PICK_ROWS * 4);
+const pickTex = new THREE.DataTexture(pickData, ATTR_W, PICK_ROWS, THREE.RGBAFormat, THREE.UnsignedByteType);
+pickTex.needsUpdate = true;
+uniforms.uPick.value = pickTex;
 
 const VERT = /* glsl */`
   in float bld;
@@ -369,6 +381,8 @@ const VERT = /* glsl */`
   uniform float uFocus[${FOCUS_MAX}];
   uniform int uFocusGroup[${FOCUS_MAX}];
   uniform int uFocusN;
+  uniform sampler2D uPick;
+  uniform float uPickOn;
   out vec3 vColor;
   out vec3 vWorld;
   out float vGid;
@@ -447,6 +461,10 @@ const VERT = /* glsl */`
     if (uBlind > 0.5 && vGid == uSelected) c = vec3(0.925, 0.0, 0.0);
     else if (uBlind > 0.5 && uBlind < 1.5) c = uMaquette;
     if (vGid == uHover || (vGid == uSelected && uBlind < 0.5)) c = mix(c, vec3(0.0), 0.35);
+    if (uPickOn > 0.5) {
+      int gi = int(vGid + 0.5);
+      if (texelFetch(uPick, ivec2(gi % ${ATTR_W}, gi / ${ATTR_W}), 0).x < 0.5) c = mix(c, uMaquette, 0.78);
+    }
     vColor = c;
     vec4 w = modelMatrix * vec4(p, 1.0);
     vWorld = w.xyz;
@@ -2000,10 +2018,156 @@ function resize() {
   drawHist();
 }
 addEventListener('resize', resize);
+// ---------- Search ----------
+// The index (pipeline/s14_search.py) loads on the first use of the search box: street names and named buildings.
+// House numbers live in one file per first letter of the street, loaded when needed.
+let index = null;
+const shards = {};
+const normal = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const shardOf = key => /^[a-z]/.test(key) ? key[0] : '0';
+function loadIndex() {
+  index ??= fetch('data/search/index.json').then(r => r.json()).then(d => {
+    d.streets = d.streets.map(([n, nb]) => ({ n, nb, key: normal(n) }));
+    d.names.forEach(n => { n.key = normal(n[0]); n.keyNl = n[1] ? normal(n[1]) : null; });
+    return d;
+  });
+  return index;
+}
+function numbersOf(st) {
+  const k = shardOf(st.key);
+  shards[k] ??= fetch(`data/search/${k}.json`).then(r => r.json());
+  return shards[k].then(sh => sh[st.n] || []);
+}
+const findInput = document.getElementById('find-input');
+const findList = document.getElementById('find-results');
+const findSel = document.getElementById('find-sel');
+// The field stands just right of the mode bar, whose width depends on the language and the fonts.
+const findBox = findInput.closest('.find'), modesBar = document.querySelector('.modes');
+function placeFind() {
+  if (phone.matches) { findBox.style.left = ''; return; }
+  // while in use it widens, and must stay on screen
+  const open = findBox.matches(':focus-within') || !findSel.hidden;
+  const w = open ? 300 : findBox.offsetWidth;
+  findBox.style.left = `${Math.min(modesBar.getBoundingClientRect().right + 8, innerWidth - w - 16)}px`;
+}
+addEventListener('resize', placeFind);
+document.fonts?.ready.then(placeFind);
+setTimeout(placeFind, 0);
+findInput.addEventListener('focus', placeFind);
+findInput.addEventListener('blur', () => setTimeout(placeFind, 200));
+let results = [], active = -1, searchSeq = 0;
+
+const streetsFor = (d, k) => d.streets.filter(st => st.key.startsWith(k))
+  .concat(d.streets.filter(st => !st.key.startsWith(k) && st.key.includes(k)));
+async function search(q, d) {
+  const k = normal(q);
+  if (k.length < 2) return [];
+  const out = [];
+  const m = k.match(/^(.*\D)\s*(\d+)\s*([a-z]?)$/);
+  if (m) {
+    const want = +m[2], letter = m[3] || '', sk = m[1].trim();
+    const streets = streetsFor(d, sk).slice(0, 4);
+    const nums = await Promise.all(streets.map(numbersOf));
+    streets.forEach((st, i) => {
+      const a = nums[i];
+      const exact = a.find(x => x[0].toLowerCase() === `${want}${letter}`) || a.find(x => parseInt(x[0]) === want);
+      if (exact) { out.push({ kind: 'address', label: `${st.n} ${exact[0]}`, gid: exact[1] }); return; }
+      // not in the register: the nearest number on the same side of the street
+      const near = a.filter(x => parseInt(x[0]) % 2 === want % 2)
+        .sort((p, q) => Math.abs(parseInt(p[0]) - want) - Math.abs(parseInt(q[0]) - want))[0];
+      if (near) out.push({ kind: 'address', label: `${st.n} ${near[0]}`, gid: near[1],
+        note: t('{n} is not in the register; nearest on the same side').replace('{n}', `${st.n} ${want}${letter}`) });
+    });
+  }
+  const starts = n => n.key.startsWith(k) || !!n.keyNl?.startsWith(k);
+  const named = d.names.filter(n => n.key.includes(k) || n.keyNl?.includes(k)).sort((p, q) => starts(q) - starts(p));
+  for (const n of named.slice(0, 5)) out.push({ kind: n[3], label: LANG === 'nl' && n[1] ? n[1] : n[0], gid: n[2] });
+  if (!m) for (const st of streetsFor(d, k).slice(0, 4)) out.push({ kind: 'street', label: st.n, street: st });
+  return out.slice(0, 8);
+}
+const KIND = { address: 'Address', building: 'Building', person: 'Lived here', street: 'Street' };
+function renderResults() {
+  findList.innerHTML = results.map((r, i) => `<li role="option" data-i="${i}" aria-selected="${i === active}">
+    <b>${esc(r.label)}</b><span>${t(KIND[r.kind])}${r.kind === 'street' ? ` · ${fmt(r.street.nb)} ${t('buildings')}` : ''}</span>
+    ${r.note ? `<em>${esc(r.note)}</em>` : ''}</li>`).join('') || (findInput.value.trim().length > 1 ? `<li class="none">${t('Nothing found')}</li>` : '');
+  findList.hidden = !findList.innerHTML;
+  findInput.setAttribute('aria-expanded', String(!findList.hidden));
+  findList.querySelectorAll('[data-i]').forEach(li => li.onmousedown = e => { e.preventDefault(); choose(results[+li.dataset.i]); });
+}
+findInput.addEventListener('focus', loadIndex);
+findInput.addEventListener('input', async () => {
+  const seq = ++searchSeq;
+  const d = await loadIndex();
+  const r = await search(findInput.value, d);
+  if (seq !== searchSeq) return;   // a later keystroke already searched
+  results = r; active = results.length ? 0 : -1;
+  renderResults();
+});
+findInput.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (results.length) active = (active + (e.key === 'ArrowDown' ? 1 : -1) + results.length) % results.length;
+    renderResults();
+  } else if (e.key === 'Enter' && results[active]) { choose(results[active]); }
+  else if (e.key === 'Escape') { findList.hidden = true; findInput.blur(); }
+  e.stopPropagation();
+});
+findInput.addEventListener('blur', () => setTimeout(() => { findList.hidden = true; }, 150));
+
+// What the search found stays lit while the rest of the city dims.
+let found = null;
+function setLit(gids) {
+  pickData.fill(0);
+  for (const g of gids) pickData[g * 4] = 255;
+  pickTex.needsUpdate = true;
+  uniforms.uPickOn.value = gids.length ? 1 : 0;
+}
+function clearFound() {
+  found = null; findSel.hidden = true; setLit([]); orbit = false; placeFind();
+}
+async function choose(r) {
+  findList.hidden = true; findInput.blur();
+  findInput.value = r.label;
+  found = r;
+  renderSel();
+  if (r.kind === 'street') {
+    const gids = [...new Set((await numbersOf(r.street)).map(a => a[1]))];
+    if (found !== r || !gids.length) return;
+    setLit(gids);
+    pinCard(-1);
+    const bs = gids.map(building), xs = bs.map(b => b.x), zs = bs.map(b => b.z);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs), 150);
+    flyTo((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...zs) + Math.min(...zs)) / 2, null, Math.min(5000, span * 1.5));
+  } else {
+    setLit([r.gid]);
+    const b = building(r.gid);
+    flyTo(b.x, b.z, () => { if (found === r) { pinCard(r.gid, innerWidth * 0.62, innerHeight * 0.2); orbit = true; } }, 300);
+  }
+}
+function renderSel() {
+  if (!found) { findSel.hidden = true; return; }
+  findSel.innerHTML = `<span>${esc(found.label)}</span><button class="sel-clear" aria-label="${t('Clear')}">×</button>`;
+  findSel.hidden = false;
+  placeFind();
+  findSel.querySelector('.sel-clear').onclick = () => { clearFound(); findInput.value = ''; };
+}
+addEventListener('keydown', e => { if (e.key === 'Escape' && found && !document.querySelector('dialog[open]')) { clearFound(); findInput.value = ''; } });
+
+// The camera slowly circles what was found, until the viewer takes over.
+let orbit = false;
+canvas.addEventListener('pointerdown', () => { orbit = false; });
+canvas.addEventListener('wheel', () => { orbit = false; }, { passive: true });
+controls.autoRotateSpeed = 0.6;
+const orbitTick = () => { controls.autoRotate = orbit && !flight; requestAnimationFrame(orbitTick); };
+orbitTick();
+
 function applyStaticText() {
   document.documentElement.lang = LANG;
   document.querySelector('.dek').textContent = t('Every building standing today, by age and historical context.');
   document.querySelector('.about-open').textContent = t('About');
+  setTimeout(placeFind, 0);
+  findInput.placeholder = t('Search'); findInput.setAttribute('aria-label', t('Search a building, address or street'));
+  if (found) renderSel();
   document.querySelector('.walks-open span').textContent = LANG === 'nl' ? 'Route' : 'Walk';
   document.querySelectorAll('[data-lang-block]').forEach(a => { a.hidden = a.dataset.langBlock !== LANG; });
   document.querySelectorAll('.modes button[data-mode]').forEach(b => { b.textContent = t(b.dataset.label); });
@@ -2067,4 +2231,4 @@ renderer.setAnimationLoop(now => {
 });
 
 
-window.__dbg = { pick, uniforms, camera, controls, setLayer, layers, pinCard, showCard, building, labelGroup, labels, flyTo, startPlay, gidOf, questClick, startQuest, get quests() { return quests; } };
+window.__dbg = { loadIndex, search, choose, numbersOf, pick, uniforms, camera, controls, setLayer, layers, pinCard, showCard, building, labelGroup, labels, flyTo, startPlay, gidOf, questClick, startQuest, get quests() { return quests; } };

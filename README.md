@@ -17,7 +17,7 @@ open data ──► pipeline/ (Python) ──► web/data/ (binary tiles + JSON)
 
 | Step | What it does |
 |---|---|
-| `s00_fetch_*` | Downloads BGT water, the city's open datasets, energy labels |
+| `s00_fetch_*` | Downloads BGT water, the city's open datasets, energy labels, BAG addresses |
 | `s01_load` | 3D BAG tiles → buildings and their LoD 1.3 parts |
 | `s02_attributes` | Cleans construction years (placeholders, rounded years, monument register), floors, heights |
 | `s03_tiles` | Packs 600 m tiles into 8 bundles, writes per-building attributes and the city config |
@@ -30,6 +30,7 @@ open data ──► pipeline/ (Python) ──► web/data/ (binary tiles + JSON)
 | `s10_commons` | Finds more building photos on Commons by address in the file name |
 | `s11_facts` | Checks the 'Did you know' facts against Wikipedia |
 | `s13_quests` | Resolves the quests (`quests.py`) to buildings and checks every claim |
+| `s14_search` | Search index: street names and named buildings, plus every BAG address (`s00_fetch_addresses`) in one file per first letter |
 | `s12_archive` | Up to six archive photos per building from the Stadsarchief beeldbank, via the Amsterdam Time Machine knowledge graph |
 
 ## Run it
@@ -37,7 +38,7 @@ open data ──► pipeline/ (Python) ──► web/data/ (binary tiles + JSON)
 ```bash
 uv sync
 # raw inputs: see the docstrings of s00_* and s01_load (3D BAG tiles, PDOK boundary, RCE and Wikidata exports)
-for s in s01_load s02_attributes s05_layers s03_tiles s04_water s06_wiki s07_labels s12_archive s13_quests; do uv run python -m pipeline.$s; done
+for s in s01_load s02_attributes s05_layers s03_tiles s04_water s06_wiki s07_labels s12_archive s13_quests s14_search; do uv run python -m pipeline.$s; done
 python3 -m http.server 8642 --directory web
 ```
 
