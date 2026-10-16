@@ -26,9 +26,12 @@ const clamp01 = t => Math.max(0, Math.min(1, t));
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // --- the timeline (seconds) ---
-const T_SPLIT = 5.8, T_ORBIT = 6.7, T_PARIS = 6.9, T_AMS = 7.9, T_EUROPE = 8.8, T_TURN = 10.2, T_TURN_END = 15, T_END = 15;
+const T_SPLIT = 6.8, T_ORBIT = 7.7, T_PARIS = 7.9, T_AMS = 8.9, T_EUROPE = 9.8, T_TURN = 11.2, T_TURN_END = 16, T_END = 16;
+// Everything plays 1.2 times slower than these times say; the film lasts T_END × SLOW seconds.
+const SLOW = 1.2;
+window.DURATION = T_END * SLOW;
 // Push-ins on the grid: Paris, Amsterdam, St. Petersburg, then the whole grid again.
-const GRID_SHOTS = [[0, 1, null], [0.6, 1, null], [1.2, 2.6, 'paris'], [2.3, 2.6, 'paris'], [2.8, 2.6, 'amsterdam'], [3.9, 2.6, 'amsterdam'], [4.4, 2.6, 'spb'], [5.3, 2.6, 'spb'], [5.8, 1, null]];
+const GRID_SHOTS = [[0, 1, null], [0.6, 1, null], [1.2, 2.6, 'paris'], [2.8, 2.6, 'paris'], [3.3, 2.6, 'amsterdam'], [4.9, 2.6, 'amsterdam'], [5.4, 2.6, 'spb'], [6.3, 2.6, 'spb'], [6.8, 1, null]];
 // The globe opens close on Paris and Amsterdam and pulls back once they have landed.
 const GLOBE_ZOOM = [[T_SPLIT, 3.4], [T_AMS + 0.7, 3.4], [T_EUROPE + 0.6, 1]];
 const FLY = 1.0;
@@ -69,7 +72,7 @@ ORDER.forEach((id, i) => {
 // The whole world builds up: from Amsterdam outwards, every populated place on Earth (Natural Earth) rises as a
 // little cluster of buildings in the map's period colours, taller where more people live.
 const PERIOD_COLOURS = ['#4a1410', '#8c1c13', '#c0462b', '#d97a2b', '#e5b13a', '#8e9f3c', '#3f8f6b', '#2c7391', '#3a4f9a', '#6a3f8f'];
-const T_COVER = 10.1, COVER_SPAN = 4.1, AMS = [4.90, 52.37];
+const T_COVER = 11.1, COVER_SPAN = 4.1, AMS = [4.90, 52.37];
 let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const BARS = [];
 for (const [lon, lat, pop] of (window.PLACES || [])) {
@@ -141,7 +144,7 @@ function gridCam(t, draw) {
 }
 
 async function renderFrame(i) {
-  const t = i / FPS;
+  const t = i / FPS / SLOW;
   g.fillStyle = '#0b0b0b'; g.fillRect(0, 0, W, H);
   const ims = Object.fromEntries(await Promise.all(ORDER.map(async id => [id, await frame(id, t)])));
 

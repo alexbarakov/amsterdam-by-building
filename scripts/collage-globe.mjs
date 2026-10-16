@@ -1,5 +1,5 @@
 /*
-  Renders scripts/collage-globe.html (copied next to its assets in out-video/collage/globe/) frame by frame (30 fps, 15 s) into
+  Renders scripts/collage-globe.html (copied next to its assets in out-video/collage/globe/) frame by frame (30 fps, as long as the page's DURATION) into
   out-video/building-by-building-globe.mp4. Needs the films from collage-record.mjs, cut into frames in
   out-video/collage/globe/f/<id>/, and d3, topojson-client, world-atlas land-50m (as land.js) and Natural Earth
   populated places (as places.js, [lon, lat, pop_max]) beside them.
@@ -29,7 +29,8 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1080 } });
 await page.addInitScript(f => { window.FRAMES = f; }, frames);
 await page.goto("file://" + join(dir, "globe.html"));
-const list = only.length ? only : Array.from({ length: 450 }, (_, i) => i);
+const total = Math.round(await page.evaluate(() => window.DURATION) * 30);
+const list = only.length ? only : Array.from({ length: total }, (_, i) => i);
 for (const i of list) {
   await page.evaluate(i => window.renderFrame(i), i);
   await page.locator("canvas").screenshot({ path: join(out, `${String(i).padStart(4, "0")}.jpg`), type: "jpeg", quality: 92 });
