@@ -1,7 +1,8 @@
 /*
   Renders scripts/collage-globe.html (copied next to its assets in out-video/collage/globe/) frame by frame (30 fps, 15 s) into
   out-video/building-by-building-globe.mp4. Needs the films from collage-record.mjs, cut into frames in
-  out-video/collage/globe/f/<id>/, and d3, topojson-client and world-atlas land-110m (as land.js) beside them.
+  out-video/collage/globe/f/<id>/, and d3, topojson-client, world-atlas land-50m (as land.js) and Natural Earth
+  populated places (as places.js, [lon, lat, pop_max]) beside them.
 
     cd ../stop-token && node ../amsterdam-by-building/scripts/collage-globe.mjs [frame ...]
 

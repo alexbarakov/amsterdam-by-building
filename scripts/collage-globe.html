@@ -5,9 +5,10 @@
 <script src="d3.min.js"></script>
 <script src="topojson.min.js"></script>
 <script src="land.js"></script>
+<script src="places.js"></script>
 <script>
 /* Building by building: the collage splits, the films fly to their cities on a turning globe, Paris first,
-   then Amsterdam, then everyone else; each city stays as a pulsing red dot. renderFrame(i) draws frame i at 30 fps. */
+   then Amsterdam, then everyone else; each city stays as a pulsing red dot, and the whole globe builds up. renderFrame(i) draws frame i at 30 fps. */
 const FPS = 30, W = 1440, H = 1080, CX = 720, CY = 575, R = 395, RED = '#ec0000';
 const cv = document.getElementById('c'), g = cv.getContext('2d');
 const land = topojson.feature(LAND, LAND.objects.land);
@@ -25,7 +26,7 @@ const clamp01 = t => Math.max(0, Math.min(1, t));
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // --- the timeline (seconds) ---
-const T_SPLIT = 3.9, T_ORBIT = 4.9, T_PARIS = 5.1, T_AMS = 6.2, T_EUROPE = 7.3, T_TURN = 8.9, T_TURN_END = 13.9, T_END = 15;
+const T_SPLIT = 3.9, T_ORBIT = 4.9, T_PARIS = 5.1, T_AMS = 6.2, T_EUROPE = 7.3, T_TURN = 8.9, T_TURN_END = 15, T_END = 15;
 // Push-ins on the grid: Paris, then Amsterdam, then the whole grid again.
 const GRID_SHOTS = [[0, 1, null], [0.8, 1, null], [1.5, 2.6, 'paris'], [2.2, 2.6, 'paris'], [2.7, 2.6, 'amsterdam'], [3.3, 2.6, 'amsterdam'], [3.85, 1, null]];
 // The globe opens close on Paris and Amsterdam and pulls back once they have landed.
@@ -64,11 +65,43 @@ ORDER.forEach((id, i) => {
   orbit[id] = { x: CX + Math.cos(a) * 610, y: CY - 10 + Math.sin(a) * 440, w: 168, h: 126 };
 });
 
+// The whole world builds up: from Amsterdam outwards, every populated place on Earth (Natural Earth) rises as a
+// little cluster of buildings in the map's period colours, taller where more people live.
+const PERIOD_COLOURS = ['#4a1410', '#8c1c13', '#c0462b', '#d97a2b', '#e5b13a', '#8e9f3c', '#3f8f6b', '#2c7391', '#3a4f9a', '#6a3f8f'];
+const T_COVER = 8.6, COVER_SPAN = 4.9, AMS = [4.90, 52.37];
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const BARS = [];
+for (const [lon, lat, pop] of (window.PLACES || [])) {
+  const lp = Math.log10(Math.max(pop, 1000));
+  const n = 1 + Math.floor(Math.max(0, lp - 3.5) * 2.4), spread = 0.08 + 0.12 * Math.max(0, lp - 4);
+  const delay = T_COVER + d3.geoDistance([lon, lat], AMS) / Math.PI * COVER_SPAN;
+  for (let k = 0; k < n; k++) {
+    const a = rnd() * Math.PI * 2, r = k ? spread * Math.sqrt(rnd()) : 0;
+    BARS.push({ ll: [lon + Math.cos(a) * r / Math.cos(lat * Math.PI / 180), lat + Math.sin(a) * r],
+      h: (0.004 + 0.028 * Math.min(1, Math.max(0, lp - 3.5) / 3.6)) * (0.5 + rnd()),
+      c: Math.floor(rnd() * PERIOD_COLOURS.length), at: delay + rnd() * 0.25 });
+  }
+}
+function drawBars(p, t, alpha) {
+  const [cx, cy] = p.translate(), centre = [centreLon(t), centreLat(t)];
+  const paths = PERIOD_COLOURS.map(() => new Path2D());
+  for (const b of BARS) {
+    const grow = ease(clamp01((t - b.at) / 0.5));
+    if (grow <= 0 || d3.geoDistance(b.ll, centre) > Math.PI / 2 - 0.03) continue;
+    const [x, y] = p(b.ll), k = 1 + b.h * grow;
+    paths[b.c].moveTo(x, y); paths[b.c].lineTo(cx + (x - cx) * k, cy + (y - cy) * k);
+  }
+  g.save(); g.globalAlpha = alpha; g.lineWidth = 1.8; g.lineCap = 'round';
+  paths.forEach((pa, i) => { g.strokeStyle = PERIOD_COLOURS[i]; g.stroke(pa); });
+  g.restore();
+}
+
 const imgCache = new Map();
 // The films run at double speed: the cities grow faster, and each ends on its full city.
-const SPEED = 2;
+// They start 4.5 s into each recording, where the city has already filled in.
+const SPEED = 2, OFFSET = 4.5;
 function frame(id, t) {
-  const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.floor(t * FPS * SPEED)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
+  const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.round(OFFSET * FPS) + Math.floor(t * FPS * SPEED)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
   if (!imgCache.has(src)) { const im = new Image(); im.src = src; imgCache.set(src, im.decode().then(() => im).catch(() => null)); }
   return imgCache.get(src);
 }
@@ -117,6 +150,7 @@ async function renderFrame(i) {
     g.beginPath(); path(d3.geoGraticule10()); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.stroke();
     g.beginPath(); path(land); g.fillStyle = '#33393e'; g.fill();
     g.beginPath(); path({ type: 'Sphere' }); g.strokeStyle = 'rgba(255,255,255,.14)'; g.stroke();
+    if (t > T_COVER) drawBars(p, t, 1);
 
     // arcs: Paris → Amsterdam, then Amsterdam → everyone
     for (const [id, , lon, lat] of CITIES) {
@@ -185,13 +219,6 @@ async function renderFrame(i) {
     text('Building', 26, 76, 44, 800); text('by building', 26, 122, 44, 800);
     g.font = '400 15px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b9c0c4';
     ['15 city maps, each coloured by the year', 'its buildings went up. It started with', 'Paris, building by building.'].forEach((l, k) => g.fillText(l, 26, 200 + k * 21));
-    g.restore();
-  }
-  const fin = ease(clamp01((t - T_TURN_END + 0.2) / 0.8));
-  if (fin > 0) {
-    g.save(); g.globalAlpha = fin;
-    text('Paris → Amsterdam → the world', CX, 92, 46, 800, '#fff', 'center');
-    text('15 cities, building by building', CX, 132, 20, 400, '#b9c0c4', 'center');
     g.restore();
   }
 }
