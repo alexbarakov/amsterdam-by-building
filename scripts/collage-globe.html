@@ -56,7 +56,8 @@ LAND_AT.cdmx = timeFacing(-99.13) - FLY * 0.8;
 LAND_AT.sydney = timeFacing(151.21) - FLY * 0.8;
 
 // --- layout of the opening grid: a title cell, then the fifteen films ---
-const ORDER = ['paris', 'amsterdam', 'spb', 'london', 'sydney', 'cdmx', 'rome', 'milan', 'italia', 'saopaulo', 'sevilla', 'montpellier', 'nantes', 'helsinki', 'sion'];
+// Dark and light maps alternate: the five dark cells (title, Paris, London, Milan, Pavia) never touch side by side.
+const ORDER = ['amsterdam', 'paris', 'spb', 'sydney', 'london', 'rome', 'cdmx', 'saopaulo', 'sevilla', 'montpellier', 'milan', 'nantes', 'helsinki', 'italia', 'sion'];
 const gridCell = k => ({ x: (k % 4) * 360 + 180, y: Math.floor(k / 4) * 270 + 135, w: 360, h: 270 });
 // waiting places around the globe, in the order the films leave
 const orbit = {};
