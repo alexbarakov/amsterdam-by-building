@@ -31,7 +31,8 @@ const T_SPLIT = 6.8, T_ORBIT = 7.7, T_PARIS = 7.9, T_AMS = 8.9, T_EUROPE = 9.8, 
 const SLOW = 1.2;
 window.DURATION = T_END * SLOW;
 // Push-ins on the grid: Paris, Amsterdam, St. Petersburg, then the whole grid again.
-const GRID_SHOTS = [[0, 1, null], [0.6, 1, null], [1.2, 2.6, 'paris'], [2.8, 2.6, 'paris'], [3.3, 2.6, 'amsterdam'], [4.9, 2.6, 'amsterdam'], [5.4, 2.6, 'spb'], [6.3, 2.6, 'spb'], [6.8, 1, null]];
+// ×4 is exactly one 4:3 cell filling the 4:3 frame: the city alone, nothing cut at the edges.
+const GRID_SHOTS = [[0, 1, null], [0.6, 1, null], [1.2, 4, 'paris'], [2.8, 4, 'paris'], [3.3, 4, 'amsterdam'], [4.9, 4, 'amsterdam'], [5.4, 4, 'spb'], [6.3, 4, 'spb'], [6.8, 1, null]];
 // The globe opens close on Paris and Amsterdam and pulls back once they have landed.
 const GLOBE_ZOOM = [[T_SPLIT, 3.4], [T_AMS + 0.7, 3.4], [T_EUROPE + 0.6, 1]];
 const FLY = 1.0;
@@ -82,21 +83,32 @@ for (const [lon, lat, pop] of (window.PLACES || [])) {
   for (let k = 0; k < n; k++) {
     const a = rnd() * Math.PI * 2, r = k ? spread * Math.sqrt(rnd()) : 0;
     BARS.push({ ll: [lon + Math.cos(a) * r / Math.cos(lat * Math.PI / 180), lat + Math.sin(a) * r],
-      h: (0.004 + 0.028 * Math.min(1, Math.max(0, lp - 3.5) / 3.6)) * (0.5 + rnd()),
+      h: (0.003 + 0.019 * Math.min(1, Math.max(0, lp - 3.5) / 3.6)) * (0.5 + rnd()),
       c: Math.floor(rnd() * PERIOD_COLOURS.length), at: delay + rnd() * 0.25 });
   }
 }
-function drawBars(p, t, alpha) {
+// The buildings on the globe, lit: the period colours lifted so the darkest still read on dark land, drawn on their
+// own layer, then laid over twice more, blurred and added, as the glow of a lit city.
+const LIT = PERIOD_COLOURS.map(c => d3.color(c).brighter(0.9).formatHex());
+const layer = document.createElement('canvas'); layer.width = W; layer.height = H;
+const lg = layer.getContext('2d');
+const coverage = t => ease(clamp01((t - T_COVER) / (COVER_SPAN + 0.6)));
+function drawBars(p, t) {
   const [cx, cy] = p.translate(), centre = [centreLon(t), centreLat(t)];
-  const paths = PERIOD_COLOURS.map(() => new Path2D());
+  const paths = LIT.map(() => new Path2D());
   for (const b of BARS) {
     const grow = ease(clamp01((t - b.at) / 0.5));
     if (grow <= 0 || d3.geoDistance(b.ll, centre) > Math.PI / 2 - 0.03) continue;
     const [x, y] = p(b.ll), k = 1 + b.h * grow;
     paths[b.c].moveTo(x, y); paths[b.c].lineTo(cx + (x - cx) * k, cy + (y - cy) * k);
   }
-  g.save(); g.globalAlpha = alpha; g.lineWidth = 1.8; g.lineCap = 'round';
-  paths.forEach((pa, i) => { g.strokeStyle = PERIOD_COLOURS[i]; g.stroke(pa); });
+  lg.clearRect(0, 0, W, H); lg.lineWidth = 1.7; lg.lineCap = 'round';
+  paths.forEach((pa, i) => { lg.strokeStyle = LIT[i]; lg.stroke(pa); });
+  const k = coverage(t);
+  g.drawImage(layer, 0, 0);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  g.filter = 'blur(5px)'; g.globalAlpha = 0.55 * k; g.drawImage(layer, 0, 0);
+  g.filter = 'blur(18px)'; g.globalAlpha = 0.45 * k; g.drawImage(layer, 0, 0);
   g.restore();
 }
 
@@ -115,13 +127,17 @@ function projection(t, scale = 1) {
 }
 const visible = (p, lonlat, t) => d3.geoDistance(lonlat, [centreLon(t), centreLat(t)]) < Math.PI / 2 - 0.02;
 
-function card(im, x, y, w, h, alpha = 1, label) {
+function card(im, x, y, w, h, alpha = 1) {
   if (!im || w < 2) return;
   g.save(); g.globalAlpha = alpha;
-  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = w > 300 ? 0 : 18;
-  g.fillStyle = '#fff'; g.fillRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4);
-  g.shadowBlur = 0; g.drawImage(im, x - w / 2, y - h / 2, w, h);
+  if (w > 300) { g.drawImage(im, x - w / 2, y - h / 2, w, h); g.restore(); return; }   // a grid cell
+  const rr = Math.min(6, w / 20);
+  g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 24; g.shadowOffsetY = 6;
+  g.beginPath(); g.roundRect(x - w / 2, y - h / 2, w, h, rr); g.fillStyle = '#111'; g.fill();
+  g.shadowColor = 'transparent'; g.clip(); g.drawImage(im, x - w / 2, y - h / 2, w, h);
   g.restore();
+  g.save(); g.globalAlpha = alpha * 0.7; g.beginPath(); g.roundRect(x - w / 2, y - h / 2, w, h, rr);
+  g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.2; g.stroke(); g.restore();
 }
 function text(s, x, y, size, weight = 700, color = '#fff', align = 'left') {
   g.font = `${weight} ${size}px "Helvetica Neue", Arial, sans-serif`; g.fillStyle = color; g.textAlign = align; g.fillText(s, x, y);
@@ -151,15 +167,25 @@ async function renderFrame(i) {
   // the globe arrives as the grid splits
   const gin = ease(clamp01((t - T_SPLIT) / (T_ORBIT - T_SPLIT + 0.4)));
   if (gin > 0) {
-    const p = projection(t, lerp(0.86, 1, gin)), path = d3.geoPath(p, g);
+    // As the world fills with buildings the globe lights up: a warm halo, lighter land, and in the last two seconds
+    // the camera eases in.
+    const k = coverage(t), push = ease(clamp01((t - (T_END - 2.4)) / 2.4));
+    const p = projection(t, lerp(0.86, 1, gin) * (1 + 0.1 * push)), path = d3.geoPath(p, g), r = p.scale();
     g.save(); g.globalAlpha = gin;
-    const grad = g.createRadialGradient(CX - R * .35, CY - R * .4, R * .1, CX, CY, R * 1.05);
-    grad.addColorStop(0, '#1d2124'); grad.addColorStop(1, '#0f1113');
+    if (globeZoom(t) < 1.6) {
+      const a = 0.18 + 0.82 * k, halo = g.createRadialGradient(CX, CY, r * 0.96, CX, CY, r * 1.42);
+      halo.addColorStop(0, `rgba(255,150,80,${0.5 * a})`); halo.addColorStop(0.22, `rgba(255,105,55,${0.2 * a})`);
+      halo.addColorStop(0.6, `rgba(236,40,20,${0.06 * a})`); halo.addColorStop(1, 'rgba(236,0,0,0)');
+      g.fillStyle = halo; g.fillRect(0, 0, W, H);
+    }
+    const grad = g.createRadialGradient(CX - r * .35, CY - r * .4, r * .1, CX, CY, r * 1.05);
+    grad.addColorStop(0, d3.interpolateRgb('#1d2124', '#2a2622')(k)); grad.addColorStop(1, d3.interpolateRgb('#0f1113', '#141110')(k));
     g.beginPath(); path({ type: 'Sphere' }); g.fillStyle = grad; g.fill();
     g.beginPath(); path(d3.geoGraticule10()); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.stroke();
-    g.beginPath(); path(land); g.fillStyle = '#33393e'; g.fill();
-    g.beginPath(); path({ type: 'Sphere' }); g.strokeStyle = 'rgba(255,255,255,.14)'; g.stroke();
-    if (t > T_COVER) drawBars(p, t, 1);
+    g.beginPath(); path(land); g.fillStyle = d3.interpolateRgb('#33393e', '#4a4744')(k); g.fill();
+    // the rim catches the light
+    g.beginPath(); path({ type: 'Sphere' }); g.strokeStyle = `rgba(255,${Math.round(lerp(255, 190, k))},${Math.round(lerp(255, 140, k))},${0.14 + 0.4 * k})`; g.lineWidth = 1 + k; g.stroke();
+    if (t > T_COVER) drawBars(p, t);
 
     // arcs: Paris → Amsterdam, then Amsterdam → everyone
     for (const [id, , lon, lat] of CITIES) {
@@ -180,7 +206,7 @@ async function renderFrame(i) {
       const pulse = ((age + ORDER.indexOf(id) * 0.17) % 1.6) / 1.6;
       g.beginPath(); g.arc(x, y, 5 + pulse * 22, 0, 7); g.strokeStyle = `rgba(236,0,0,${(1 - pulse) * .8})`; g.lineWidth = 2; g.stroke();
       const pop = age < 0.25 ? 1 + (0.25 - age) * 4 : 1;
-      g.beginPath(); g.arc(x, y, 5 * pop, 0, 7); g.fillStyle = RED; g.fill();
+      g.save(); g.shadowColor = RED; g.shadowBlur = 16; g.beginPath(); g.arc(x, y, 5 * pop, 0, 7); g.fillStyle = '#ff2a1a'; g.fill(); g.restore();
       // only the two that started it carry their names
       if ((id === 'paris' || id === 'amsterdam') && t < T_TURN + 0.4) {
         const a = clamp01(age / 0.3) * (1 - clamp01((t - T_TURN) / 0.4));
