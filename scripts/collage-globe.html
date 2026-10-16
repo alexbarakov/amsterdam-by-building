@@ -1,0 +1,174 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#0b0b0b}canvas{display:block}</style>
+<canvas id="c" width="1440" height="1080"></canvas>
+<script src="d3.min.js"></script>
+<script src="topojson.min.js"></script>
+<script src="land.js"></script>
+<script>
+/* Building by building: the collage splits, the films fly to their cities on a turning globe, Paris first,
+   then Amsterdam, then everyone else; each city stays as a pulsing red dot. renderFrame(i) draws frame i at 30 fps. */
+const FPS = 30, W = 1440, H = 1080, CX = 720, CY = 575, R = 395, RED = '#ec0000';
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const land = topojson.feature(LAND, LAND.objects.land);
+const CITIES = [
+  // id, label, lon, lat, author
+  ['paris', 'Paris', 2.35, 48.86], ['amsterdam', 'Amsterdam', 4.90, 52.37], ['spb', 'St. Petersburg', 30.31, 59.94],
+  ['london', 'London', -0.13, 51.51], ['sydney', 'Sydney', 151.21, -33.87], ['cdmx', 'Mexico City', -99.13, 19.43],
+  ['rome', 'Rome', 12.50, 41.90], ['milan', 'Milan', 9.19, 45.46], ['italia', 'Pavia', 9.16, 45.19],
+  ['saopaulo', 'São Paulo', -46.63, -23.55], ['sevilla', 'Seville', -5.98, 37.39], ['montpellier', 'Montpellier', 3.88, 43.61],
+  ['nantes', 'Nantes', -1.55, 47.22], ['helsinki', 'Helsinki', 24.94, 60.17], ['sion', 'Sion', 7.36, 46.23],
+];
+const FRAMES = window.FRAMES || {};   // id → number of extracted frames
+const ease = t => t < 0 ? 0 : t > 1 ? 1 : t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+const clamp01 = t => Math.max(0, Math.min(1, t));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+// --- the timeline (seconds) ---
+const T_SPLIT = 2.6, T_ORBIT = 3.8, T_PARIS = 3.9, T_AMS = 5.3, T_EUROPE = 6.7, T_TURN = 8.4, T_TURN_END = 13.6, T_END = 15;
+const FLY = 1.25;
+// The globe faces Europe, then turns once around to the west and comes back to Europe.
+function centreLon(t) { return 4 - 360 * ease(clamp01((t - T_TURN) / (T_TURN_END - T_TURN))); }
+const CENTRE_LAT = 22;
+// When each city lands. The far ones wait for the turn to bring them round.
+const LAND_AT = { paris: T_PARIS, amsterdam: T_AMS };
+const europe = ['london', 'nantes', 'montpellier', 'sion', 'milan', 'italia', 'rome', 'sevilla', 'helsinki', 'spb'];
+europe.forEach((id, i) => { LAND_AT[id] = T_EUROPE + i * 0.13; });
+// lon at the centre when the city faces us: centreLon(t) = city lon
+function timeFacing(lon) {
+  for (let t = T_TURN; t < T_TURN_END; t += 0.01) { let d = ((centreLon(t) - lon) % 360 + 540) % 360 - 180; if (Math.abs(d) < 30) return t; }
+  return T_TURN_END;
+}
+LAND_AT.saopaulo = timeFacing(-46.63) - FLY * 0.8;
+LAND_AT.cdmx = timeFacing(-99.13) - FLY * 0.8;
+LAND_AT.sydney = timeFacing(151.21) - FLY * 0.8;
+
+// --- layout of the opening grid: a title cell, then the fifteen films ---
+const ORDER = ['paris', 'amsterdam', 'spb', 'london', 'sydney', 'cdmx', 'rome', 'milan', 'italia', 'saopaulo', 'sevilla', 'montpellier', 'nantes', 'helsinki', 'sion'];
+const gridCell = k => ({ x: (k % 4) * 360 + 180, y: Math.floor(k / 4) * 270 + 135, w: 360, h: 270 });
+// waiting places around the globe, in the order the films leave
+const orbit = {};
+ORDER.forEach((id, i) => {
+  const a = -Math.PI / 2 + (i + 0.5) * (2 * Math.PI / ORDER.length);
+  orbit[id] = { x: CX + Math.cos(a) * 610, y: CY - 10 + Math.sin(a) * 440, w: 168, h: 126 };
+});
+
+const imgCache = new Map();
+function frame(id, t) {
+  const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.floor(t * FPS)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
+  if (!imgCache.has(src)) { const im = new Image(); im.src = src; imgCache.set(src, im.decode().then(() => im).catch(() => null)); }
+  return imgCache.get(src);
+}
+
+function projection(t, scale = 1) {
+  return d3.geoOrthographic().scale(R * scale).translate([CX, CY]).rotate([-centreLon(t), -CENTRE_LAT]).clipAngle(90);
+}
+const visible = (p, lonlat, t) => d3.geoDistance(lonlat, [centreLon(t), CENTRE_LAT]) < Math.PI / 2 - 0.02;
+
+function card(im, x, y, w, h, alpha = 1, label) {
+  if (!im || w < 2) return;
+  g.save(); g.globalAlpha = alpha;
+  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = w > 300 ? 0 : 18;
+  g.fillStyle = '#fff'; g.fillRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4);
+  g.shadowBlur = 0; g.drawImage(im, x - w / 2, y - h / 2, w, h);
+  g.restore();
+}
+function text(s, x, y, size, weight = 700, color = '#fff', align = 'left') {
+  g.font = `${weight} ${size}px "Helvetica Neue", Arial, sans-serif`; g.fillStyle = color; g.textAlign = align; g.fillText(s, x, y);
+}
+
+async function renderFrame(i) {
+  const t = i / FPS;
+  g.fillStyle = '#0b0b0b'; g.fillRect(0, 0, W, H);
+  const ims = Object.fromEntries(await Promise.all(ORDER.map(async id => [id, await frame(id, t)])));
+
+  // the globe arrives as the grid splits
+  const gin = ease(clamp01((t - T_SPLIT) / (T_ORBIT - T_SPLIT + 0.4)));
+  if (gin > 0) {
+    const p = projection(t, lerp(0.86, 1, gin)), path = d3.geoPath(p, g);
+    g.save(); g.globalAlpha = gin;
+    const grad = g.createRadialGradient(CX - R * .35, CY - R * .4, R * .1, CX, CY, R * 1.05);
+    grad.addColorStop(0, '#1d2124'); grad.addColorStop(1, '#0f1113');
+    g.beginPath(); path({ type: 'Sphere' }); g.fillStyle = grad; g.fill();
+    g.beginPath(); path(d3.geoGraticule10()); g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 1; g.stroke();
+    g.beginPath(); path(land); g.fillStyle = '#33393e'; g.fill();
+    g.beginPath(); path({ type: 'Sphere' }); g.strokeStyle = 'rgba(255,255,255,.14)'; g.stroke();
+
+    // arcs: Paris → Amsterdam, then Amsterdam → everyone
+    for (const [id, , lon, lat] of CITIES) {
+      if (id === 'paris') continue;
+      const from = id === 'amsterdam' ? [2.35, 48.86] : [4.90, 52.37], at = LAND_AT[id];
+      const k = ease(clamp01((t - (at - FLY * 0.5)) / (FLY * 0.6)));
+      if (k <= 0) continue;
+      const ip = d3.geoInterpolate(from, [lon, lat]);
+      const line = { type: 'LineString', coordinates: d3.range(0, 1.0001, 0.02).filter(s => s <= k).map(ip) };
+      g.beginPath(); path(line);
+      g.strokeStyle = id === 'amsterdam' ? RED : `rgba(236,0,0,${t > at + 0.6 ? .35 : .8})`; g.lineWidth = id === 'amsterdam' ? 2.5 : 1.6; g.stroke();
+    }
+    // dots, pulsing once a city has landed
+    for (const [id, name, lon, lat] of CITIES) {
+      const at = LAND_AT[id];
+      if (t < at || !visible(p, [lon, lat], t)) continue;
+      const [x, y] = p([lon, lat]), age = t - at;
+      const pulse = ((age + ORDER.indexOf(id) * 0.17) % 1.6) / 1.6;
+      g.beginPath(); g.arc(x, y, 5 + pulse * 22, 0, 7); g.strokeStyle = `rgba(236,0,0,${(1 - pulse) * .8})`; g.lineWidth = 2; g.stroke();
+      const pop = age < 0.25 ? 1 + (0.25 - age) * 4 : 1;
+      g.beginPath(); g.arc(x, y, 5 * pop, 0, 7); g.fillStyle = RED; g.fill();
+      // only the two that started it carry their names
+      if ((id === 'paris' || id === 'amsterdam') && t < T_TURN + 0.4) {
+        const a = clamp01(age / 0.3) * (1 - clamp01((t - T_TURN) / 0.4));
+        g.save(); g.globalAlpha = a;
+        if (id === 'paris') text(name, x - 14, y + 26, 22, 700, '#fff', 'right'); else text(name, x + 14, y - 12, 22, 700, '#fff', 'left');
+        g.restore();
+      }
+    }
+    g.restore();
+  }
+
+  // the films: grid → orbit → their city
+  const p = projection(t);
+  ORDER.forEach((id, i) => {
+    const im = ims[id], c = gridCell(i + 1), o = orbit[id], at = LAND_AT[id];
+    const city = CITIES.find(c => c[0] === id);
+    if (t < T_SPLIT) { card(im, c.x, c.y, c.w - 2, c.h - 2); return; }
+    const s = ease(clamp01((t - T_SPLIT - i * 0.02) / (T_ORBIT - T_SPLIT)));
+    let x = lerp(c.x, o.x, s), y = lerp(c.y, o.y, s), w = lerp(c.w - 2, o.w, s), h = lerp(c.h - 2, o.h, s);
+    // a gentle drift while waiting
+    if (s >= 1) { x += Math.sin(t * 1.3 + i) * 4; y += Math.cos(t * 1.1 + i * 2) * 4; }
+    const f = clamp01((t - (at - FLY)) / FLY);
+    if (f >= 1) return;
+    if (f > 0) {
+      const [tx, ty] = p([city[2], city[3]]), e = ease(f);
+      // the card rises a little, then dives to its city
+      const mx = (x + tx) / 2, my = Math.min(y, ty) - 120;
+      x = (1 - e) ** 2 * x + 2 * (1 - e) * e * mx + e * e * tx;
+      y = (1 - e) ** 2 * y + 2 * (1 - e) * e * my + e * e * ty;
+      const big = id === 'paris' || id === 'amsterdam' ? 1.5 : 1;
+      const grow = Math.sin(Math.min(1, f * 1.6) * Math.PI) * 0.35 * big;
+      w = lerp(o.w, 10, e) * (1 + grow); h = lerp(o.h, 7.5, e) * (1 + grow);
+      card(im, x, y, w, h, 1 - clamp01((f - 0.85) / 0.15));
+      return;
+    }
+    card(im, x, y, w, h);
+  });
+
+  // the title cell in the grid, then the closing words
+  if (t < T_SPLIT + 0.6) {
+    const a = 1 - clamp01((t - T_SPLIT) / 0.6), c = gridCell(0);
+    g.save(); g.globalAlpha = a;
+    g.fillStyle = '#0b0b0b'; g.fillRect(c.x - 180, c.y - 135, 360, 270);
+    text('Building', 26, 76, 44, 800); text('by building', 26, 122, 44, 800);
+    g.font = '400 15px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b9c0c4';
+    ['15 city maps, each coloured by the year', 'its buildings went up. It started with', 'Paris, building by building.'].forEach((l, k) => g.fillText(l, 26, 200 + k * 21));
+    g.restore();
+  }
+  const fin = ease(clamp01((t - T_TURN_END + 0.2) / 0.8));
+  if (fin > 0) {
+    g.save(); g.globalAlpha = fin;
+    text('Paris → Amsterdam → the world', CX, 92, 46, 800, '#fff', 'center');
+    text('15 cities, building by building', CX, 132, 20, 400, '#b9c0c4', 'center');
+    g.restore();
+  }
+}
+window.renderFrame = renderFrame;
+</script>
