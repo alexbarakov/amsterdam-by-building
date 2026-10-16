@@ -25,11 +25,22 @@ const clamp01 = t => Math.max(0, Math.min(1, t));
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // --- the timeline (seconds) ---
-const T_SPLIT = 2.6, T_ORBIT = 3.8, T_PARIS = 3.9, T_AMS = 5.3, T_EUROPE = 6.7, T_TURN = 8.4, T_TURN_END = 13.6, T_END = 15;
+const T_SPLIT = 3.9, T_ORBIT = 4.9, T_PARIS = 5.1, T_AMS = 6.2, T_EUROPE = 7.3, T_TURN = 8.9, T_TURN_END = 13.9, T_END = 15;
+// Push-ins on the grid: Paris, then Amsterdam, then the whole grid again.
+const GRID_SHOTS = [[0, 1, null], [0.8, 1, null], [1.5, 2.6, 'paris'], [2.2, 2.6, 'paris'], [2.7, 2.6, 'amsterdam'], [3.3, 2.6, 'amsterdam'], [3.85, 1, null]];
+// The globe opens close on Paris and Amsterdam and pulls back once they have landed.
+const GLOBE_ZOOM = [[T_SPLIT, 3.4], [T_AMS + 0.7, 3.4], [T_EUROPE + 0.6, 1]];
 const FLY = 1.25;
 // The globe faces Europe, then turns once around to the west and comes back to Europe.
-function centreLon(t) { return 4 - 360 * ease(clamp01((t - T_TURN) / (T_TURN_END - T_TURN))); }
-const CENTRE_LAT = 22;
+function centreLon(t) { return lerp(3.6, 4, 1 - zoomK(t)) - 360 * ease(clamp01((t - T_TURN) / (T_TURN_END - T_TURN))); }
+function keyed(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) return lerp(keys[i - 1][1], keys[i][1], ease((t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0])));
+  return keys.at(-1)[1];
+}
+const globeZoom = t => keyed(GLOBE_ZOOM, t);
+const zoomK = t => (globeZoom(t) - 1) / 2.4;            // 1 close on Paris and Amsterdam, 0 the whole globe
+const centreLat = t => lerp(22, 50.5, zoomK(t));
 // When each city lands. The far ones wait for the turn to bring them round.
 const LAND_AT = { paris: T_PARIS, amsterdam: T_AMS };
 const europe = ['london', 'nantes', 'montpellier', 'sion', 'milan', 'italia', 'rome', 'sevilla', 'helsinki', 'spb'];
@@ -54,16 +65,18 @@ ORDER.forEach((id, i) => {
 });
 
 const imgCache = new Map();
+// The films run at double speed: the cities grow faster, and each ends on its full city.
+const SPEED = 2;
 function frame(id, t) {
-  const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.floor(t * FPS)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
+  const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.floor(t * FPS * SPEED)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
   if (!imgCache.has(src)) { const im = new Image(); im.src = src; imgCache.set(src, im.decode().then(() => im).catch(() => null)); }
   return imgCache.get(src);
 }
 
 function projection(t, scale = 1) {
-  return d3.geoOrthographic().scale(R * scale).translate([CX, CY]).rotate([-centreLon(t), -CENTRE_LAT]).clipAngle(90);
+  return d3.geoOrthographic().scale(R * scale * globeZoom(t)).translate([CX, CY]).rotate([-centreLon(t), -centreLat(t)]).clipAngle(90);
 }
-const visible = (p, lonlat, t) => d3.geoDistance(lonlat, [centreLon(t), CENTRE_LAT]) < Math.PI / 2 - 0.02;
+const visible = (p, lonlat, t) => d3.geoDistance(lonlat, [centreLon(t), centreLat(t)]) < Math.PI / 2 - 0.02;
 
 function card(im, x, y, w, h, alpha = 1, label) {
   if (!im || w < 2) return;
@@ -75,6 +88,17 @@ function card(im, x, y, w, h, alpha = 1, label) {
 }
 function text(s, x, y, size, weight = 700, color = '#fff', align = 'left') {
   g.font = `${weight} ${size}px "Helvetica Neue", Arial, sans-serif`; g.fillStyle = color; g.textAlign = align; g.fillText(s, x, y);
+}
+
+// The camera on the grid: a zoom and the point it looks at, between the push-ins.
+function gridFocus(t) {
+  const at = id => { const c = gridCell(ORDER.indexOf(id) + 1); return [c.x, c.y]; };
+  const pts = GRID_SHOTS.map(([k, , id]) => [k, id ? at(id) : [W / 2, H / 2]]);
+  return [keyed(pts.map(p => [p[0], p[1][0]]), t), keyed(pts.map(p => [p[0], p[1][1]]), t)];
+}
+function gridCam(t, draw) {
+  const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocus(t);
+  g.save(); g.translate(W / 2 - fx * z, H / 2 - fy * z); g.scale(z, z); draw(); g.restore();
 }
 
 async function renderFrame(i) {
@@ -130,7 +154,7 @@ async function renderFrame(i) {
   ORDER.forEach((id, i) => {
     const im = ims[id], c = gridCell(i + 1), o = orbit[id], at = LAND_AT[id];
     const city = CITIES.find(c => c[0] === id);
-    if (t < T_SPLIT) { card(im, c.x, c.y, c.w - 2, c.h - 2); return; }
+    if (t < T_SPLIT) { gridCam(t, () => card(im, c.x, c.y, c.w - 2, c.h - 2)); return; }
     const s = ease(clamp01((t - T_SPLIT - i * 0.02) / (T_ORBIT - T_SPLIT)));
     let x = lerp(c.x, o.x, s), y = lerp(c.y, o.y, s), w = lerp(c.w - 2, o.w, s), h = lerp(c.h - 2, o.h, s);
     // a gentle drift while waiting
@@ -156,6 +180,7 @@ async function renderFrame(i) {
   if (t < T_SPLIT + 0.6) {
     const a = 1 - clamp01((t - T_SPLIT) / 0.6), c = gridCell(0);
     g.save(); g.globalAlpha = a;
+    if (t < T_SPLIT) { const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocus(t); g.translate(W / 2 - fx * z, H / 2 - fy * z); g.scale(z, z); }
     g.fillStyle = '#0b0b0b'; g.fillRect(c.x - 180, c.y - 135, 360, 270);
     text('Building', 26, 76, 44, 800); text('by building', 26, 122, 44, 800);
     g.font = '400 15px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b9c0c4';
