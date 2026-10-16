@@ -26,12 +26,12 @@ const clamp01 = t => Math.max(0, Math.min(1, t));
 const lerp = (a, b, t) => a + (b - a) * t;
 
 // --- the timeline (seconds) ---
-const T_SPLIT = 3.9, T_ORBIT = 4.9, T_PARIS = 5.1, T_AMS = 6.2, T_EUROPE = 7.3, T_TURN = 8.9, T_TURN_END = 15, T_END = 15;
-// Push-ins on the grid: Paris, then Amsterdam, then the whole grid again.
-const GRID_SHOTS = [[0, 1, null], [0.8, 1, null], [1.5, 2.6, 'paris'], [2.2, 2.6, 'paris'], [2.7, 2.6, 'amsterdam'], [3.3, 2.6, 'amsterdam'], [3.85, 1, null]];
+const T_SPLIT = 5.8, T_ORBIT = 6.7, T_PARIS = 6.9, T_AMS = 7.9, T_EUROPE = 8.8, T_TURN = 10.2, T_TURN_END = 15, T_END = 15;
+// Push-ins on the grid: Paris, Amsterdam, St. Petersburg, then the whole grid again.
+const GRID_SHOTS = [[0, 1, null], [0.6, 1, null], [1.2, 2.6, 'paris'], [2.3, 2.6, 'paris'], [2.8, 2.6, 'amsterdam'], [3.9, 2.6, 'amsterdam'], [4.4, 2.6, 'spb'], [5.3, 2.6, 'spb'], [5.8, 1, null]];
 // The globe opens close on Paris and Amsterdam and pulls back once they have landed.
 const GLOBE_ZOOM = [[T_SPLIT, 3.4], [T_AMS + 0.7, 3.4], [T_EUROPE + 0.6, 1]];
-const FLY = 1.25;
+const FLY = 1.0;
 // The globe faces Europe, then turns once around to the west and comes back to Europe.
 function centreLon(t) { return lerp(3.6, 4, 1 - zoomK(t)) - 360 * ease(clamp01((t - T_TURN) / (T_TURN_END - T_TURN))); }
 function keyed(keys, t) {
@@ -45,7 +45,7 @@ const centreLat = t => lerp(22, 50.5, zoomK(t));
 // When each city lands. The far ones wait for the turn to bring them round.
 const LAND_AT = { paris: T_PARIS, amsterdam: T_AMS };
 const europe = ['london', 'nantes', 'montpellier', 'sion', 'milan', 'italia', 'rome', 'sevilla', 'helsinki', 'spb'];
-europe.forEach((id, i) => { LAND_AT[id] = T_EUROPE + i * 0.13; });
+europe.forEach((id, i) => { LAND_AT[id] = T_EUROPE + i * 0.1; });
 // lon at the centre when the city faces us: centreLon(t) = city lon
 function timeFacing(lon) {
   for (let t = T_TURN; t < T_TURN_END; t += 0.01) { let d = ((centreLon(t) - lon) % 360 + 540) % 360 - 180; if (Math.abs(d) < 30) return t; }
@@ -68,7 +68,7 @@ ORDER.forEach((id, i) => {
 // The whole world builds up: from Amsterdam outwards, every populated place on Earth (Natural Earth) rises as a
 // little cluster of buildings in the map's period colours, taller where more people live.
 const PERIOD_COLOURS = ['#4a1410', '#8c1c13', '#c0462b', '#d97a2b', '#e5b13a', '#8e9f3c', '#3f8f6b', '#2c7391', '#3a4f9a', '#6a3f8f'];
-const T_COVER = 8.6, COVER_SPAN = 4.9, AMS = [4.90, 52.37];
+const T_COVER = 10.1, COVER_SPAN = 4.1, AMS = [4.90, 52.37];
 let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const BARS = [];
 for (const [lon, lat, pop] of (window.PLACES || [])) {
@@ -129,8 +129,13 @@ function gridFocus(t) {
   const pts = GRID_SHOTS.map(([k, , id]) => [k, id ? at(id) : [W / 2, H / 2]]);
   return [keyed(pts.map(p => [p[0], p[1][0]]), t), keyed(pts.map(p => [p[0], p[1][1]]), t)];
 }
+// The look point stays far enough from the edges that a push-in never shows past the grid.
+function gridFocusClamped(t, z) {
+  const [fx, fy] = gridFocus(t), hw = W / (2 * z), hh = H / (2 * z);
+  return [Math.min(W - hw, Math.max(hw, fx)), Math.min(H - hh, Math.max(hh, fy))];
+}
 function gridCam(t, draw) {
-  const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocus(t);
+  const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocusClamped(t, z);
   g.save(); g.translate(W / 2 - fx * z, H / 2 - fy * z); g.scale(z, z); draw(); g.restore();
 }
 
@@ -214,7 +219,7 @@ async function renderFrame(i) {
   if (t < T_SPLIT + 0.6) {
     const a = 1 - clamp01((t - T_SPLIT) / 0.6), c = gridCell(0);
     g.save(); g.globalAlpha = a;
-    if (t < T_SPLIT) { const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocus(t); g.translate(W / 2 - fx * z, H / 2 - fy * z); g.scale(z, z); }
+    if (t < T_SPLIT) { const z = keyed(GRID_SHOTS.map(k => [k[0], k[1]]), t), [fx, fy] = gridFocusClamped(t, z); g.translate(W / 2 - fx * z, H / 2 - fy * z); g.scale(z, z); }
     g.fillStyle = '#0b0b0b'; g.fillRect(c.x - 180, c.y - 135, 360, 270);
     text('Building', 26, 76, 44, 800); text('by building', 26, 122, 44, 800);
     g.font = '400 15px "Helvetica Neue", Arial, sans-serif'; g.fillStyle = '#b9c0c4';
