@@ -114,8 +114,9 @@ function drawBars(p, t) {
 
 const imgCache = new Map();
 // The films run at double speed: the cities grow faster, and each ends on its full city.
-// They start 4.5 s into each recording, where the city has already filled in.
-const SPEED = 2, OFFSET = 4.5;
+// They start 3 s into each recording, where the city has begun to fill in, and run 1.4 times as fast: slow enough
+// that every film, St. Petersburg's included, is still growing when the camera pushes in on it.
+const SPEED = 1.4, OFFSET = 3;
 function frame(id, t) {
   const n = FRAMES[id] || 1, k = Math.min(n, 1 + Math.round(OFFSET * FPS) + Math.floor(t * FPS * SPEED)), src = `f/${id}/${String(k).padStart(3, '0')}.jpg`;
   if (!imgCache.has(src)) { const im = new Image(); im.src = src; imgCache.set(src, im.decode().then(() => im).catch(() => null)); }
@@ -178,6 +179,15 @@ async function renderFrame(i) {
       halo.addColorStop(0.6, `rgba(236,40,20,${0.06 * a})`); halo.addColorStop(1, 'rgba(236,0,0,0)');
       g.fillStyle = halo; g.fillRect(0, 0, W, H);
     }
+    // Sunrise in the last seconds: the sun comes up from behind the upper right edge of the globe.
+    const sunK = ease(clamp01((t - (T_END - 3.6)) / 3.2)), SA = -0.62;
+    const sx = CX + Math.cos(SA) * (r + lerp(-40, 48, sunK)), sy = CY + Math.sin(SA) * (r + lerp(-40, 48, sunK));
+    if (sunK > 0) {
+      const sg = g.createRadialGradient(sx, sy, 0, sx, sy, 620);
+      sg.addColorStop(0, `rgba(255,248,230,${sunK})`); sg.addColorStop(0.05, `rgba(255,214,150,${0.85 * sunK})`);
+      sg.addColorStop(0.25, `rgba(255,150,80,${0.28 * sunK})`); sg.addColorStop(1, 'rgba(255,120,60,0)');
+      g.fillStyle = sg; g.fillRect(0, 0, W, H);
+    }
     const grad = g.createRadialGradient(CX - r * .35, CY - r * .4, r * .1, CX, CY, r * 1.05);
     grad.addColorStop(0, d3.interpolateRgb('#1d2124', '#2a2622')(k)); grad.addColorStop(1, d3.interpolateRgb('#0f1113', '#141110')(k));
     g.beginPath(); path({ type: 'Sphere' }); g.fillStyle = grad; g.fill();
@@ -214,6 +224,32 @@ async function renderFrame(i) {
         if (id === 'paris') text(name, x - 14, y + 26, 22, 700, '#fff', 'right'); else text(name, x + 14, y - 12, 22, 700, '#fff', 'left');
         g.restore();
       }
+    }
+    if (sunK > 0) {
+      // daylight washing over the near side
+      g.save(); g.beginPath(); path({ type: 'Sphere' }); g.clip();
+      const lx = CX + Math.cos(SA) * r, ly = CY + Math.sin(SA) * r, day = g.createRadialGradient(lx, ly, 0, lx, ly, r * 1.5);
+      day.addColorStop(0, `rgba(255,214,160,${0.42 * sunK})`); day.addColorStop(0.45, `rgba(255,170,110,${0.12 * sunK})`); day.addColorStop(1, 'rgba(255,150,90,0)');
+      g.globalCompositeOperation = 'lighter'; g.fillStyle = day; g.fillRect(0, 0, W, H); g.restore();
+      // the bright edge of the planet where the light comes round
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (const [wd, al, bl] of [[2, 0.95, 6], [7, 0.35, 22]]) {
+        g.beginPath(); g.arc(CX, CY, r, SA - 0.75 * sunK - 0.05, SA + 0.75 * sunK + 0.05);
+        g.strokeStyle = `rgba(255,236,200,${al * sunK})`; g.lineWidth = wd; g.shadowColor = 'rgba(255,200,140,1)'; g.shadowBlur = bl; g.stroke();
+      }
+      // the sun itself, only where it clears the planet
+      g.beginPath(); g.rect(0, 0, W, H); g.arc(CX, CY, r, 0, Math.PI * 2, true); g.clip('evenodd');
+      g.beginPath(); g.arc(sx, sy, 14, 0, 7); g.fillStyle = `rgba(255,252,240,${sunK})`; g.shadowColor = '#ffd9a0'; g.shadowBlur = 40; g.fill();
+      g.restore();
+      // a thin anamorphic streak and two faint ghosts on the line to the centre
+      g.save(); g.globalCompositeOperation = 'lighter';
+      const st = g.createLinearGradient(sx - 700, 0, sx + 700, 0);
+      st.addColorStop(0, 'rgba(255,190,130,0)'); st.addColorStop(0.5, `rgba(255,236,210,${0.7 * sunK})`); st.addColorStop(1, 'rgba(255,190,130,0)');
+      g.fillStyle = st; g.fillRect(sx - 700, sy - 1.5, 1400, 3);
+      for (const [f, rad, al] of [[0.55, 26, 0.10], [1.35, 46, 0.06]]) {
+        g.beginPath(); g.arc(lerp(sx, CX, f), lerp(sy, CY, f), rad, 0, 7); g.fillStyle = `rgba(255,200,150,${al * sunK})`; g.fill();
+      }
+      g.restore();
     }
     g.restore();
   }
