@@ -177,7 +177,7 @@ const NL_UI = {
   'From the graph': 'Uit de graaf',
   'Back to the graph': 'Terug naar de graaf',
   'Graph': 'Graaf',
-  'Search a building, address or street': 'Zoek een gebouw, adres of straat', 'Search': 'Zoeken', 'Address': 'Adres',
+  'Search a building, address or street': 'Zoek een gebouw, adres of straat', 'Search': 'Zoeken', 'Address': 'Adres', 'Open in Google Maps': 'Open in Google Maps',
   'Building': 'Gebouw', 'Lived here': 'Woonde hier', 'Street': 'Straat', 'Nothing found': 'Niets gevonden', 'Clear': 'Wissen',
   '{n} is not in the register; nearest on the same side': '{n} staat niet in het register; het dichtstbijzijnde nummer aan dezelfde kant',
   'Before 1536': 'Vóór 1536',
@@ -661,6 +661,41 @@ function residentsHtml(b, pinned) {
 // Archive pictures from the Stadsarchief beeldbank (s12_archive), in 64 shards keyed by a CRC-32 of the BAG id.
 const CRC = Array.from({ length: 256 }, (_, n) => { for (let k = 0; k < 8; k++) n = n & 1 ? 0xEDB88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });
 const crc32 = s => { let c = ~0; for (const ch of s) c = CRC[(c ^ ch.charCodeAt(0)) & 255] ^ (c >>> 8); return (~c) >>> 0; };
+// ---------- The card's head ----------
+// The head is painted in the building's period colour, so the card says its age before it is read: name, address,
+// year. Text goes dark on the light colours of the palette and white on the dark ones.
+const addrShards = {};
+function addressOf(gid, then) {
+  const k = Math.floor(gid / 4096);
+  if (addrShards[k] === undefined) {
+    addrShards[k] = null;
+    fetch(`data/addr/${k}.json`).then(r => r.json()).then(d => { addrShards[k] = d; then(); }).catch(() => {});
+  }
+  return addrShards[k]?.[gid % 4096] || null;
+}
+function inkOn(hex) {
+  const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.3 ? '#000' : '#fff';
+}
+// Google Maps by address, so Google opens its own card for the place; by coordinates when there is no address.
+function googleMapsUrl(b, a) {
+  const [lat, lon] = toLatLon(b.x, b.z);
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a ? `${a[0]}, ${config.label}` : `${lat.toFixed(6)},${lon.toFixed(6)}`)}`;
+}
+function cardHeadHtml(b, w, period) {
+  const a = addressOf(b.gid, () => refreshCard(b.gid));
+  const address = a && `${esc(a[0])}${a[1] ? ` <span>${LANG === 'nl' ? `(en ${a[1]} meer)` : `(and ${a[1]} more)`}</span>` : ''}`;
+  const name = w?.label && tr(w, 'label');
+  // a Wikidata label that is only the address (many listed houses) is said once
+  const sameAsAddress = name && a && name.replace(/,.*$/, '') === a[0];
+  return `<header class="card-head" style="background:${period.color};color:${inkOn(period.color)}">
+      ${name && !sameAsAddress ? `<h3>${esc(name)}</h3>` : ''}
+      <p class="addr">${address ? `${address} · ` : ''}<a class="gmaps" href="${esc(googleMapsUrl(b, a))}" target="_blank" rel="noopener">${t('Open in Google Maps')}</a></p>
+      <div class="when"><span class="y">${[1, 2, 4].includes(b.flag) ? 'c. ' : ''}${b.year}</span>
+        <span class="period">${esc(t(period.label))}</span></div>
+    </header>`;
+}
+
 const archiveShards = {};
 function archiveOf(bag, then) {
   const n = String(crc32(bag) % 64).padStart(2, '0');
@@ -762,6 +797,7 @@ function cardHtml(gid, pinned) {
     wikiOf(w)?.url && link(wikiOf(w).url, t(wikiOf(w).lang === 'nl' ? 'Dutch Wikipedia' : 'Wikipedia')),
     b.mon && link(`https://monumentenregister.cultureelerfgoed.nl/monumenten/${b.mon}`, t('Monument register')),
     link(`https://bagviewer.kadaster.nl/lvbag/bag-viewer/?objectId=${b.bag}`, t('BAG register')),
+    link(googleMapsUrl(b, addressOf(b.gid, () => {})), 'Google Maps'),
   ].filter(Boolean);
   const inLayers = b.groups.map(g => {
     const note = g.layer.notes?.[b.bag];
@@ -772,11 +808,7 @@ function cardHtml(gid, pinned) {
   return `
     ${pinned ? '<button class="card-close" aria-label="Close">×</button>' : ''}
     ${photosHtml(b, im, credit, pinned)}
-    <header class="card-head">
-      ${w?.label ? `<h3>${esc(tr(w, 'label'))}</h3>` : ''}
-      <div class="when"><span class="y">${[1, 2, 4].includes(b.flag) ? 'c. ' : ''}${b.year}</span>
-        <span class="period"><i style="background:${period.color}"></i>${esc(t(period.label))}</span></div>
-    </header>
+    ${cardHeadHtml(b, w, period)}
     ${pinned && wikiOf(w)?.extract ? `<section><p class="extract">${esc(wikiOf(w).extract)}</p></section>` : ''}
     ${didYouKnow[b.bag] ? `<section class="fact"><h4>${t('Did you know')}</h4><p>${esc(LANG === 'nl' ? didYouKnow[b.bag].nl : didYouKnow[b.bag].en)}${pinned ? ` ${link(didYouKnow[b.bag].source, t('Source'))}` : ''}</p></section>` : ''}
     ${residentsHtml(b, pinned)}
