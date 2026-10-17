@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LAYRS: Amsterdam</title>
+<meta name="description" content="All 192,000 buildings of Amsterdam in 3D, coloured by the year they were built, with context layers: who lived here, Jewish Amsterdam, street art, the war, secrets of the city. Every story with its source.">
+<link rel="canonical" href="https://stop-token.com/lab/amsterdam/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LAYRS: Amsterdam">
+<meta property="og:description" content="All 192,000 buildings of Amsterdam in 3D, coloured by the year they were built, with context layers: who lived here, Jewish Amsterdam, street art, the war, secrets of the city. Every story with its source.">
+<meta property="og:url" content="https://stop-token.com/lab/amsterdam/">
+<meta property="og:image" content="https://stop-token.com/lab/amsterdam/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" type="text/csv" title="Buildings of Amsterdam by construction year (CSV)" href="data/buildings.csv">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "name": "LAYRS: Amsterdam", "url": "https://stop-token.com/lab/amsterdam/", "description": "All 192,000 buildings of Amsterdam in 3D, coloured by the year they were built, with context layers: who lived here, Jewish Amsterdam, street art, the war, secrets of the city. Every story with its source.", "inLanguage": "en", "applicationCategory": "ReferenceApplication", "operatingSystem": "Any (web browser with WebGL)", "isAccessibleForFree": true, "image": "https://stop-token.com/lab/amsterdam/og.png", "about": {"@type": "City", "name": "Amsterdam"}, "author": {"@type": "Person", "name": "Alex Barakov", "url": "https://www.linkedin.com/in/alexanderbarakov"}, "isBasedOn": {"@type": "CreativeWork", "name": "Paris, building by building", "url": "https://paris.bogachev.fr/", "author": {"@type": "Person", "name": "Alexander Bogachev"}}}, {"@type": "Dataset", "name": "Buildings of Amsterdam by construction year", "description": "All 192,000 buildings of Amsterdam in 3D, coloured by the year they were built, with context layers: who lived here, Jewish Amsterdam, street art, the war, secrets of the city. Every story with its source.", "url": "https://stop-token.com/lab/amsterdam/explore/", "spatialCoverage": {"@type": "Place", "name": "Amsterdam"}, "creator": {"@type": "Person", "name": "Alex Barakov"}, "isAccessibleForFree": true, "distribution": [{"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://stop-token.com/lab/amsterdam/data/buildings.csv"}, {"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://stop-token.com/lab/amsterdam/data/layers.json"}]}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -11,6 +23,7 @@
 <script src="logo.js" defer></script>
 </head>
 <body>
+<noscript><p style="padding:24px;font:16px sans-serif">This map needs JavaScript. The same buildings and stories as plain pages: <a href="explore/">Explore Amsterdam as pages</a></p></noscript>
 <canvas id="scene" aria-label="3D map of Amsterdam's buildings"></canvas>
 <div class="veil veil-top" aria-hidden="true"></div>
 <div class="veil veil-bottom" aria-hidden="true"></div>
@@ -76,6 +89,7 @@
       <li>Street photos: City of Amsterdam panoramas. CC BY 4.0.</li>
       <li>Archive photos, 1940s–2010s: Stadsarchief Amsterdam beeldbank, linked to buildings by the Amsterdam Time Machine (University of Amsterdam). Shown from the archive's own server; each links to its record, where the rights are stated.</li>
     </ul>
+    <p class="pages">Also as plain pages, for reading and for search engines: <a href="explore/">Amsterdam, building by building</a>.</p>
     <h3>Method</h3>
     <p>Placeholder and rounded years in BAG are estimated from dated neighbours; where the monument register dates a building
     earlier, the register wins. Approximate years are paler and marked “c.”. Every hand-written story is checked against its
@@ -111,6 +125,7 @@
       <li>Straatbeelden: panorama's van de gemeente Amsterdam. CC BY 4.0.</li>
       <li>Archieffoto's, jaren 1940–2010: beeldbank van het Stadsarchief Amsterdam, aan gebouwen gekoppeld door de Amsterdam Time Machine (Universiteit van Amsterdam). Getoond vanaf de server van het archief; elke foto linkt naar de beschrijving, met de rechten.</li>
     </ul>
+    <p class="pages">Ook als gewone pagina’s, om te lezen en voor zoekmachines: <a href="explore/">Amsterdam, gebouw voor gebouw</a>.</p>
     <h3>Methode</h3>
     <p>Plaatshouders en afgeronde jaartallen in de BAG zijn geschat uit gedateerde buren; waar het monumentenregister een gebouw
     eerder dateert, wint het register. Geschatte jaren zijn lichter en gemarkeerd met “c.”. Elk zelfgeschreven verhaal is

@@ -547,7 +547,7 @@ for (const w of pool) {
     addTile(data);
     loaded++;
     document.getElementById('progress').textContent = Math.round(100 * loaded / config.tiles.length);
-    if (loaded === config.tiles.length) { document.getElementById('loading').hidden = true; cityReady(); }
+    if (loaded === config.tiles.length) { document.getElementById('loading').hidden = true; cityReady(); openDeepLink(); }
     next();
   };
   next();
@@ -1695,6 +1695,17 @@ function showFocus(G, ids) {
     focusEl.hidden = true;
     const u = new URL(location.href); u.searchParams.delete('focus'); history.replaceState(null, '', u);
   };
+}
+
+// ---------- Deep links ----------
+// ?b=<building id> opens the map on one building with its card pinned; ?layer=<layer id> opens that context layer.
+// The pages written for search engines and agents (stop-token, scripts/lab-pages.mjs) link here.
+function openDeepLink() {
+  const u = new URLSearchParams(location.search);
+  const L = u.get('layer') && layers.find(L => L.id === u.get('layer'));
+  if (L) { document.querySelector(`.modes button[data-mode="${MODE.layers}"]`)?.click(); setLayer(L); }
+  const g = u.get('b') ? gidOf(u.get('b')) : -1;
+  if (g >= 0) { const b = building(g); flyTo(b.x, b.z, () => pinCard(g, innerWidth * 0.62, innerHeight * 0.22), 320); }
 }
 
 // ---------- Panel ----------

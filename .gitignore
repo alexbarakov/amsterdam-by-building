@@ -2,3 +2,6 @@
 data/
 web/data/
 __pycache__/
+web/b/
+web/layers/
+web/explore/
