@@ -135,8 +135,13 @@ h1 { margin: 0; font-size: clamp(34px, 4.4vw, 56px); font-weight: 800; letter-sp
 .card-head { padding: 12px 16px 12px; }
 /* painted in the period colour by cardHeadHtml(); the text takes its colour from there too */
 .card-head .addr { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
-.card-head .addr span { font-weight: 400; opacity: .8; }
-.card-head .gmaps { color: inherit; font-weight: 400; text-decoration-color: currentColor; text-underline-offset: 3px; }
+.card-head .addr .more { font-weight: 400; opacity: .8; }
+/* Google Maps as a pin at the end of the address line, in the head's own ink */
+.card-head .addr { display: flex; align-items: center; gap: 8px; }
+.card-head .gmaps { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: auto; border-radius: 50%;
+  color: inherit; background: color-mix(in srgb, currentColor 14%, transparent); }
+.card-head .gmaps:hover { background: color-mix(in srgb, currentColor 26%, transparent); }
+.card-head .gmaps svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 .card .card-head .period { color: inherit; opacity: .85; }
 .card-head h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; padding-right: 26px; }
 .card .when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }

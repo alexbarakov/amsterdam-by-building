@@ -684,13 +684,13 @@ function googleMapsUrl(b, a) {
 }
 function cardHeadHtml(b, w, period) {
   const a = addressOf(b.gid, () => refreshCard(b.gid));
-  const address = a && `${esc(a[0])}${a[1] ? ` <span>${LANG === 'nl' ? `(en ${a[1]} meer)` : `(and ${a[1]} more)`}</span>` : ''}`;
+  const address = a && `${esc(a[0])}${a[1] ? ` <span class="more">${LANG === 'nl' ? `(en ${a[1]} meer)` : `(and ${a[1]} more)`}</span>` : ''}`;
   const name = w?.label && tr(w, 'label');
   // a Wikidata label that is only the address (many listed houses) is said once
   const sameAsAddress = name && a && name.replace(/,.*$/, '') === a[0];
   return `<header class="card-head" style="background:${period.color};color:${inkOn(period.color)}">
       ${name && !sameAsAddress ? `<h3>${esc(name)}</h3>` : ''}
-      <p class="addr">${address ? `${address} · ` : ''}<a class="gmaps" href="${esc(googleMapsUrl(b, a))}" target="_blank" rel="noopener">${t('Open in Google Maps')}</a></p>
+      <p class="addr">${address ? `<span>${address}</span>` : ''}<a class="gmaps" href="${esc(googleMapsUrl(b, a))}" target="_blank" rel="noopener" title="${t('Open in Google Maps')}" aria-label="${t('Open in Google Maps')}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 15s5-4.6 5-8.6A5 5 0 0 0 3 6.4C3 10.4 8 15 8 15z"/><circle cx="8" cy="6.4" r="1.8"/></svg></a></p>
       <div class="when"><span class="y">${[1, 2, 4].includes(b.flag) ? 'c. ' : ''}${b.year}</span>
         <span class="period">${esc(t(period.label))}</span></div>
     </header>`;
